@@ -60,6 +60,23 @@ pnpm lint && pnpm typecheck && pnpm build
 - Server Components als Default, Client Components nur wo nötig
 - Secrets nie committen — siehe Vault `Secrets-Management.md`
 
+## Dokumentations-Pflicht — Obsidian-Vault (dauerhaft, ab sofort)
+
+**Alles** wird fortlaufend im UFISO-Vault festgehalten — Entscheidungen,
+Doku, Vorgehen, Sitzungsergebnisse. Ohne Ausnahme, ab jetzt dauerhaft.
+
+- **Entscheidungen** (Tech/Recht/Ops/Strategie) → ADR in `07-ADRs/` bzw.
+  Entscheidungs-Note in `08-Entscheidungen/`.
+- **Jede Arbeitssitzung** → Daily Note `11-Daily-Notes/YYYY-MM-DD.md`
+  (getan / erkannt / entschieden / offen).
+- **Session-Ende** → `10-Checklisten/Wo-stehe-ich-gerade.md` aktualisieren.
+- **Nicht-triviales Vorgehen / Doku** → passende Themen-Note im Vault.
+- Sauber aufbereitet: klare Struktur, Wikilinks `[[…]]`, knapp gehalten.
+
+Der Vault ist die lokale Obsidian-App (`~/Obsidian/Storage/_UFISO`) **und**
+das private Repo `ufiso-vault`. Vault-Änderungen am Session-Ende committen
+und pushen (Conventional Commits) — genau wie das Code-Repo.
+
 ## Tonalität für generierten Content (Tropfshop)
 
 Technisch fundiert, kein Marketing-Geschwurbel. Hilfsbereit, klar, deutsch,
