@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Brand-Tokens als CSS-Variablen — ermoeglicht Dark Mode und Multi-Brand
+ * ohne Rebuild. Werte siehe @ufiso/shop-config (Vault: Branding-Konfiguration.md).
+ */
+:root {
+  --color-primary: 30 64 175; /* Wasserblau (TBD) */
+  --color-accent: 16 185 129; /* Pflanzgruen (TBD) */
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@ufiso/shop-config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Brand-Konfiguration pro UFISO-Shop (Farben, Domains, Legal, Meta). Siehe Vault: Branding-Konfiguration.md",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tropfshop": "./src/tropfshop/index.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@ufiso/tsconfig": "workspace:*",
+    "typescript": "^5.7.2"
+  }
+}

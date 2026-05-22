@@ -1,0 +1,4 @@
+# Konsistente Zeilenenden im gesamten Monorepo (Windows-Dev, Linux-CI).
+* text=auto eol=lf
+
+pnpm-lock.yaml linguist-generated=true -diff
