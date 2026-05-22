@@ -1,0 +1,26 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Default-Linker (isolated): React bleibt sauber dedupliziert — wichtig fuer
+# Next.js/Storefront-SSR. Statt alles flach zu hoisten werden gezielt nur die
+# Medusa-Pakete public-gehoistet, damit `medusa build` transitive
+# @medusajs-Plugins aufloesen kann (entspricht dem Medusa-Starter-.npmrc).
+publicHoistPattern:
+  - "*@medusajs/*"
+  - "@tanstack/react-query"
+  - react-i18next
+  - react-router-dom
+
+strictPeerDependencies: false
+autoInstallPeers: true
+
+# Build-Skripte, die laufen duerfen (pnpm blockt sonst).
+# Native Builds (swc/esbuild/sharp) werden gebraucht; Telemetry bewusst aus.
+allowBuilds:
+  "@medusajs/telemetry": false
+  "@swc/core": true
+  esbuild: true
+  msgpackr-extract: true
+  protobufjs: true
+  sharp: true

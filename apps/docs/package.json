@@ -1,0 +1,6 @@
+{
+  "name": "@ufiso/docs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Interne Architektur-Doku: ADR-Stubs und Runbooks. Langfassung im UFISO-Vault."
+}

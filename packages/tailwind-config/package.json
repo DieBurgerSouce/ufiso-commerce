@@ -1,0 +1,21 @@
+{
+  "name": "@ufiso/tailwind-config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Geteilte Tailwind-Tokens fuer UFISO-Storefronts. Multi-Brand via Preset pro Shop.",
+  "type": "module",
+  "exports": {
+    "./tropfshop": "./tropfshop.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ufiso/shop-config": "workspace:*"
+  },
+  "devDependencies": {
+    "@ufiso/tsconfig": "workspace:*",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
+  }
+}
