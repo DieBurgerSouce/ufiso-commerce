@@ -17,7 +17,7 @@ import { NextResponse } from "next/server";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export async function POST(request: Request) {
-  let payload: { email?: unknown; source?: unknown };
+  let payload: { email?: unknown; source?: unknown; website?: unknown };
   try {
     payload = await request.json();
   } catch {
@@ -30,6 +30,18 @@ export async function POST(request: Request) {
   const email = typeof payload.email === "string" ? payload.email.trim() : "";
   const source =
     typeof payload.source === "string" ? payload.source : "storefront";
+  const honeypot =
+    typeof payload.website === "string" ? payload.website.trim() : "";
+
+  // Honeypot: Bots fuellen das versteckte `website`-Feld aus.
+  // Erfolgs-Response zurueckspielen (kein Brevo-Call), damit der Bot nichts merkt.
+  if (honeypot.length > 0) {
+    console.warn("[newsletter] Honeypot ausgeloest, Submit verworfen.");
+    return NextResponse.json({
+      message:
+        "Fast geschafft — bitte bestätigen Sie Ihre Anmeldung über den Link in der E-Mail.",
+    });
+  }
 
   if (!EMAIL_RE.test(email)) {
     return NextResponse.json(

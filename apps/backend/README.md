@@ -1,78 +1,103 @@
-> ⚠️ This repository is now deprecated. Use the [dtc-starter](https://github.com/medusajs/dtc-starter) instead.
+# @ufiso/backend — Medusa v2
 
-<p align="center">
-  <a href="https://www.medusajs.com">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/59018053/229103275-b5e482bb-4601-46e6-8142-244f531cebdb.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    <img alt="Medusa logo" src="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    </picture>
-  </a>
-</p>
-<h1 align="center">
-  Medusa
-</h1>
+Headless-Commerce-Backend für UFISO. Ein Sales Channel pro Shop
+(siehe Vault `02-Architektur/Medusa-Sales-Channels.md` und ADR-002).
+Erster Shop: **Tropfshop**.
 
-<h4 align="center">
-  <a href="https://docs.medusajs.com">Documentation</a> |
-  <a href="https://www.medusajs.com">Website</a>
-</h4>
+- Storefront: `apps/storefront-tropfshop` (Port 3000)
+- Backend-Port: 9000 (Admin + Store-API)
+- Lokale Postgres + Redis aus `docker-compose.yml` (Postgres :15432, Redis :16379)
+- Prod: Neon EU (Postgres) + Hetzner (Coolify), siehe Vault
 
-<p align="center">
-  Building blocks for digital commerce
-</p>
-<p align="center">
-  <a href="https://github.com/medusajs/medusa/blob/master/CONTRIBUTING.md">
-    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="PRs welcome!" />
-  </a>
-    <a href="https://www.producthunt.com/posts/medusa"><img src="https://img.shields.io/badge/Product%20Hunt-%231%20Product%20of%20the%20Day-%23DA552E" alt="Product Hunt"></a>
-  <a href="https://discord.gg/xpCwq3Kfn8">
-    <img src="https://img.shields.io/badge/chat-on%20discord-7289DA.svg" alt="Discord Chat" />
-  </a>
-  <a href="https://twitter.com/intent/follow?screen_name=medusajs">
-    <img src="https://img.shields.io/twitter/follow/medusajs.svg?label=Follow%20@medusajs" alt="Follow @medusajs" />
-  </a>
-</p>
+## Lokale Boot-Sequenz (Schritt für Schritt)
 
-## Compatibility
+Setzt voraus: Node ≥ 22, pnpm 11.
 
-This starter is compatible with versions >= 2 of `@medusajs/medusa`. 
+```powershell
+# 1) Aus dem Repo-Root — lokale Infrastruktur
+docker compose up -d              # Postgres + Redis
+pnpm install --frozen-lockfile
 
-## Getting Started
+# 2) Backend-ENV
+cp apps/backend/.env.template apps/backend/.env
+#   (falls .env schon existiert: vorhandene Werte beibehalten)
 
-Visit the [Quickstart Guide](https://docs.medusajs.com/learn/installation) to set up a server.
+# 3) Schema migrieren (idempotent)
+pnpm --filter @ufiso/backend db:migrate
 
-Visit the [Docs](https://docs.medusajs.com/learn/installation#get-started) to learn more about our system requirements.
+# 4) Admin-User anlegen
+#    Passwort generieren (z. B. via `openssl rand -base64 24`).
+#    KEIN Commit — Eintrag in 1Password: "UFISO/Medusa Admin lokal".
+pnpm --filter @ufiso/backend exec medusa user \
+  --email admin@ufiso.local \
+  --password <generiertes-passwort>
 
-## What is Medusa
+# 5) Foundation-Seed (Sales Channel `tropfshop`, Regionen DE/AT,
+#    Stock Location, Versand, Publishable API Key)
+pnpm --filter @ufiso/backend seed
+#    → Output enthaelt NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_...
+#    → diesen Key in apps/storefront-tropfshop/.env.local eintragen.
 
-Medusa is a set of commerce modules and tools that allow you to build rich, reliable, and performant commerce applications without reinventing core commerce logic. The modules can be customized and used to build advanced ecommerce stores, marketplaces, or any product that needs foundational commerce primitives. All modules are open-source and freely available on npm.
+# 6) Mock-Produkte fuer die Coming-Soon-Tiles (idempotent ueber SKU)
+pnpm --filter @ufiso/backend seed:products
 
-Learn more about [Medusa’s architecture](https://docs.medusajs.com/learn/introduction/architecture) and [commerce modules](https://docs.medusajs.com/learn/fundamentals/modules/commerce-modules) in the Docs.
+# 7) Dev-Server starten (Backend + Storefront)
+pnpm dev
+#    Backend:    http://localhost:9000
+#    Admin:      http://localhost:9000/app
+#    Storefront: http://localhost:3000
+```
 
-## Build with AI Agents
+> **Hinweis Foundation-Seed:** Der Foundation-Seed ist nur für Channels und
+> Sales-Channel-Linking idempotent. Regionen, Stock Location, Shipping
+> Options und API-Keys werden bei jedem Lauf neu angelegt. Auf einer
+> bestehenden DB also **nicht** ohne Cleanup wiederholen.
 
-### Claude Code Plugin
+## Wichtige Skripte
 
-If you use AI agents like Claude Code, check out the [medusa-dev Claude Code plugin](https://github.com/medusajs/medusa-claude-plugins).
+| Skript                                              | Zweck                                        |
+| --------------------------------------------------- | -------------------------------------------- |
+| `pnpm --filter @ufiso/backend dev`                  | `medusa develop` (Watch-Mode)                |
+| `pnpm --filter @ufiso/backend db:migrate`           | DB-Schema migrieren                          |
+| `pnpm --filter @ufiso/backend seed`                 | Foundation-Seed (Channels/Regionen/etc.)     |
+| `pnpm --filter @ufiso/backend seed:products`        | Mock-Produkte (Bewässerungs-Sortiment)       |
+| `pnpm --filter @ufiso/backend typecheck`            | TypeScript-Check                             |
+| `pnpm --filter @ufiso/backend test:unit`            | Unit-Tests                                   |
 
-### Other Agents
+## Storefront-Verbindung
 
-If you use AI agents other than Claude Code, copy the [skills directory](https://github.com/medusajs/medusa-claude-plugins/tree/main/plugins/medusa-dev/skills) into your agent's relevant `skills` directory.
+Storefront liest aus `apps/storefront-tropfshop/.env.local`:
 
-### MCP Server
+```env
+NEXT_PUBLIC_MEDUSA_BACKEND_URL=http://localhost:9000
+NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_…   # aus Foundation-Seed-Output
+```
 
-You can also add the MCP server `https://docs.medusajs.com/mcp` to your AI agents to answer questions related to Medusa. The `medusa-dev` Claude Code plugin includes this MCP server by default.
+Der Publishable API Key ist auf den Sales Channel `tropfshop` gescoped — nur
+Produkte aus diesem Channel sind im Storefront sichtbar.
 
-## Community & Contributions
+## Brevo-DOI (Newsletter, Storefront-seitig)
 
-The community and core team are available in [GitHub Discussions](https://github.com/medusajs/medusa/discussions), where you can ask for support, discuss roadmap, and share ideas.
+Storefront `.env.local`:
 
-Join our [Discord server](https://discord.com/invite/medusajs) to meet other community members.
+```env
+BREVO_API_KEY=…
+BREVO_NEWSLETTER_LIST_ID=…
+BREVO_DOI_TEMPLATE_ID=…
+# Dev: http://localhost:3000/newsletter-bestaetigt
+# Prod: https://tropfshop.de/newsletter-bestaetigt
+BREVO_DOI_REDIRECT_URL=http://localhost:3000/newsletter-bestaetigt
+```
 
-## Other channels
+> Vor Prod-Deploy `BREVO_DOI_REDIRECT_URL` auf die `https://`-Variante setzen,
+> sonst leitet Brevo nach Bestätigung in einen lokalen Dev-Server-Endpunkt.
 
-- [GitHub Issues](https://github.com/medusajs/medusa/issues)
-- [Twitter](https://twitter.com/medusajs)
-- [LinkedIn](https://www.linkedin.com/company/medusajs)
-- [Medusa Blog](https://medusajs.com/blog/)
+## Troubleshooting
+
+- **`ECONNREFUSED` auf 15432/16379** → `docker compose up -d` im Repo-Root.
+- **Migrations laufen nicht durch** → Volume neu aufsetzen:
+  `docker compose down -v && docker compose up -d`
+  (löscht lokale DB! Re-Seed nötig).
+- **`Foundation-Seed` mehrfach gelaufen** → Bereinigung über Admin-UI oder
+  `psql` (Regions/Locations dedupen, doppelte API-Keys deaktivieren).
+- Eskalation: Runbook `06-Runbooks/Backend-Boot-Lokal.md` im Vault.

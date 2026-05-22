@@ -1,55 +1,52 @@
+import type { Metadata } from "next";
+import Link from "next/link";
 import { tropfshopBrand } from "@ufiso/shop-config/tropfshop";
-import { ComingSoonTiles } from "@/components/coming-soon-tiles";
-import { NewsletterForm } from "@/components/newsletter-form";
-import { pingMedusaConnection } from "@/lib/medusa-smoke";
 
-export default async function ComingSoonPage() {
-  // Stiller Smoke-Check der Medusa-Verbindung (logged nur, blockiert nichts).
-  await pingMedusaConnection();
+export const metadata: Metadata = {
+  title: `Anmeldung bestätigt – ${tropfshopBrand.name}`,
+  description:
+    "Vielen Dank — Ihre Newsletter-Anmeldung ist bestätigt. Wir melden uns vor dem Launch im März 2027.",
+  robots: { index: false, follow: false },
+};
 
+export default function NewsletterBestaetigtPage() {
   const year = new Date().getFullYear();
 
   return (
     <main className="relative flex min-h-screen flex-col overflow-hidden bg-neutral-950 text-neutral-100">
-      {/* Hintergrund-Akzent */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_40rem_at_70%_-10%,rgb(var(--color-primary)/0.35),transparent),radial-gradient(50rem_30rem_at_10%_110%,rgb(var(--color-accent)/0.20),transparent)]"
       />
 
       <div className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-6 py-20">
-        <p className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-sm font-medium text-neutral-300">
+        <p className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-sm font-medium text-neutral-200">
           <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-          Launch geplant für März 2027
+          Newsletter bestätigt
         </p>
 
         <h1 className="text-balance text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-          Der erste Spezialist-Shop für{" "}
-          <span className="text-accent">Tropfbewässerung</span> in DACH.
+          Anmeldung bestätigt — <span className="text-accent">danke!</span>
         </h1>
 
         <p className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-neutral-300">
-          {tropfshopBrand.name} bringt Ihnen durchdachte Tropfbewässerung für
-          Garten und Klein-Gewerbe — technisch fundiert beraten, fair bepreist.
-          Wir bauen gerade. Tragen Sie sich ein und sichern Sie sich{" "}
+          Sie sind jetzt für den {tropfshopBrand.name}-Newsletter eingetragen.
+          Wir melden uns vor dem Launch im März 2027 — inklusive Ihrer{" "}
           <strong className="font-semibold text-neutral-100">
             10&nbsp;% Frühbucher-Rabatt
           </strong>{" "}
-          auf Ihre erste Bestellung.
+          auf die erste Bestellung.
         </p>
 
-        <div className="mt-10 max-w-md">
-          <NewsletterForm />
+        <div className="mt-10">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-neutral-100 transition hover:border-accent/50 hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-accent/40"
+          >
+            ← Zurück zur Startseite
+          </Link>
         </div>
-
-        <ul className="mt-12 flex flex-wrap gap-x-8 gap-y-3 text-sm text-neutral-400">
-          <li>Versand aus Solingen</li>
-          <li>Beratung von Gärtnern für Gärtner</li>
-          <li>Lieferung nach DE &amp; AT</li>
-        </ul>
       </div>
-
-      <ComingSoonTiles />
 
       <footer className="relative border-t border-white/10 px-6 py-6">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-1 text-xs text-neutral-500 sm:flex-row sm:items-center sm:justify-between">
