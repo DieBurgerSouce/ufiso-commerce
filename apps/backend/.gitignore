@@ -24,3 +24,6 @@ build
 !.yarn/versions
 
 .medusa
+
+# Foundation-Seed-Output (CI liest hier den Publishable Key, siehe README).
+.seed-output.json

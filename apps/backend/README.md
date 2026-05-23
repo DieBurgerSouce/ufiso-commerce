@@ -57,6 +57,31 @@ pnpm dev
 > loggen `[seed] skip: <objekt> (id=...)`. Lookup-Keys siehe Kommentar in
 > `src/scripts/seed.ts`. Test: `apps/backend/integration-tests/http/seed-idempotenz.spec.ts`.
 
+> Seit Sprint 5 schreibt der Seed zusaetzlich `apps/backend/.seed-output.json`
+> mit `publishableKey` + `salesChannelId`. Lokal informativ, in CI Pflicht: der
+> `e2e-with-backend`-Job liest die Datei via `jq` und exportiert den Key als
+> `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` fuer den Storefront-Build. Datei ist
+> gitignored.
+
+## CI-Boot-Sequenz (Unterschied zu lokal)
+
+`/.github/workflows/ci.yml` startet das Backend in zwei Jobs hoch:
+
+- **e2e-with-backend** — Postgres 15 + Redis 7 als GitHub-Actions-`services:`
+  auf den Default-Ports `5432/6379` (lokal: `15432/16379`). Backend-Build →
+  `db:migrate` → Foundation-Seed (`.seed-output.json` wird geschrieben) →
+  `seed:products` → Backend startet im Hintergrund (`pnpm start &`) → `wait-on
+  http://localhost:9000/health` mit 60 s Timeout → Storefront-Build mit echtem
+  Key → Playwright-E2E.
+- **backend-integration** — gleiche Service-Container, schreibt `.env.test`
+  mit CI-Werten (`DB_HOST=localhost`, `DB_PORT=5432`) ueberschreibend und
+  rennt `test:integration:http` gegen Postgres 15.
+
+Lokal weiterhin: Docker-Postgres auf `:15432`, Redis auf `:16379`. `.env.test`
+zeigt entsprechend auf `DB_PORT=15432`. Wer den CI-Pfad lokal nachbauen will:
+`docker run -p 5432:5432 -e POSTGRES_PASSWORD=medusa -e POSTGRES_USER=medusa
+-e POSTGRES_DB=medusa postgres:15-alpine`.
+
 ## Wichtige Skripte
 
 | Skript                                              | Zweck                                        |
