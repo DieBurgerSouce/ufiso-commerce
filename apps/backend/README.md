@@ -34,6 +34,8 @@ pnpm --filter @ufiso/backend exec medusa user \
 
 # 5) Foundation-Seed (Sales Channel `tropfshop`, Regionen DE/AT,
 #    Stock Location, Versand, Publishable API Key)
+#    Seed ist idempotent, beliebig wiederholbar (Lookup-Keys: name/country_code/
+#    title, siehe Kommentar in src/scripts/seed.ts).
 pnpm --filter @ufiso/backend seed
 #    → Output enthaelt NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_...
 #    → diesen Key in apps/storefront-tropfshop/.env.local eintragen.
@@ -48,10 +50,12 @@ pnpm dev
 #    Storefront: http://localhost:3000
 ```
 
-> **Hinweis Foundation-Seed:** Der Foundation-Seed ist nur für Channels und
-> Sales-Channel-Linking idempotent. Regionen, Stock Location, Shipping
-> Options und API-Keys werden bei jedem Lauf neu angelegt. Auf einer
-> bestehenden DB also **nicht** ohne Cleanup wiederholen.
+> **Foundation-Seed ist idempotent, beliebig wiederholbar.** Sales Channel,
+> Regionen, Tax-Regionen, Stock Location, Fulfillment-Set, Shipping Option,
+> Publishable API Key und alle Links werden per Lookup geprueft und nur
+> angelegt, wenn sie noch nicht existieren (Sprint 3). Vorhandene Eintraege
+> loggen `[seed] skip: <objekt> (id=...)`. Lookup-Keys siehe Kommentar in
+> `src/scripts/seed.ts`. Test: `apps/backend/integration-tests/http/seed-idempotenz.spec.ts`.
 
 ## Wichtige Skripte
 
@@ -98,6 +102,7 @@ BREVO_DOI_REDIRECT_URL=http://localhost:3000/newsletter-bestaetigt
 - **Migrations laufen nicht durch** → Volume neu aufsetzen:
   `docker compose down -v && docker compose up -d`
   (löscht lokale DB! Re-Seed nötig).
-- **`Foundation-Seed` mehrfach gelaufen** → Bereinigung über Admin-UI oder
-  `psql` (Regions/Locations dedupen, doppelte API-Keys deaktivieren).
+- **`Foundation-Seed` mehrfach gelaufen** → unkritisch, Seed ist idempotent
+  (skipt vorhandene Objekte, siehe oben). Falls dennoch Duplikate aus einem
+  alten Lauf vor Sprint 3 existieren: Bereinigung über Admin-UI oder `psql`.
 - Eskalation: Runbook `06-Runbooks/Backend-Boot-Lokal.md` im Vault.
