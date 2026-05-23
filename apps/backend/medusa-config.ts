@@ -5,6 +5,12 @@ loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 module.exports = defineConfig({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
+    // Sprint 6 (D1): REDIS_URL wurde bislang im Code (.env, ci.yml) gesetzt,
+    // aber NICHT an Medusa durchgereicht — Backend lief mit "fake redis"
+    // (siehe Sprint-5-Backend-Log "redisUrl not found"). Damit Event-Bus +
+    // Locking + Workflow-Engine real ueber Redis laufen und unser /health
+    // tatsaechlich Redis prueft, muss redisUrl hier explizit gemappt sein.
+    redisUrl: process.env.REDIS_URL,
     http: {
       storeCors: process.env.STORE_CORS!,
       adminCors: process.env.ADMIN_CORS!,

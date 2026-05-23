@@ -93,6 +93,37 @@ zeigt entsprechend auf `DB_PORT=15432`. Wer den CI-Pfad lokal nachbauen will:
 | `pnpm --filter @ufiso/backend typecheck`            | TypeScript-Check                             |
 | `pnpm --filter @ufiso/backend test:unit`            | Unit-Tests                                   |
 
+## Logging und Observability (Sprint 6)
+
+Pino-strukturierter Logger fuer Custom-Code (Skripte, API-Routes, Instrumentation).
+Medusa's eingebauter `winston`-Logger bleibt fuer Framework-Output zustaendig — beide
+schreiben parallel nach stdout.
+
+### Konfiguration (`.env`)
+
+| ENV | Default | Wirkung |
+| --- | --- | --- |
+| `LOG_LEVEL` | `info` | Pino-Level fuer unseren Code. Werte: `fatal/error/warn/info/debug/trace/silent`. Lokal optional `debug`; CI/Prod **immer** `info` (sonst Log-Lawine). |
+| `LOGTAIL_SOURCE_TOKEN` | leer | BetterStack-Source-Token. Leer = no-op (kein Transport, nur lokale Logs). Prod-Token ueber Coolify-ENV. |
+| `NODE_ENV` | `development` lokal, `production` in CI/Prod | Wenn `development`, formatiert `pino-pretty` farbig. Sonst JSON-Lines fuer Maschinen-Parser. |
+
+Stack-Entscheidung: [[ADR-012-Logging-Stack]] (Pino, kein OpenTelemetry/Loki in
+Phase 1) und [[ADR-013-Error-Tracking]] (BetterStack als Empfehlung, Sentry/
+Glitchtip/Highlight verworfen). Privacy-Regeln: siehe Vault-Note
+`02-Architektur/Logging-Observability.md` (Pino `redact` filtert Authorization-/
+Cookie-Header und PII-Felder zentral).
+
+Custom-Helper:
+
+```ts
+import { createComponentLogger } from "./lib/logger";
+const log = createComponentLogger("my-feature");
+log.info({ event: "foo.done", count: 3 }, "human-readable message");
+```
+
+Strukturierte Felder (`event`, `object`, `id`, ...) sind in BetterStack
+filterbar; das `msg`-Feld bleibt das, was Menschen in der Konsole lesen.
+
 ## Storefront-Verbindung
 
 Storefront liest aus `apps/storefront-tropfshop/.env.local`:
