@@ -1,0 +1,40 @@
+{
+  "name": "@ufiso/odoo-sync",
+  "version": "0.0.0",
+  "private": true,
+  "description": "2-Layer-Sync-Skeleton (Medusa <-> UFISO-Odoo <-> Spargelmesser). Pure-Function-Orchestrator + Adapter-Interfaces + In-Memory-Mock. Vault: 02-Architektur/Inventory-Modell-Odoo-Sync.md, ADR-007.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./adapters/in-memory": {
+      "types": "./dist/adapters/in-memory.d.ts",
+      "import": "./dist/adapters/in-memory.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./orchestrator": {
+      "types": "./dist/orchestrator.d.ts",
+      "import": "./dist/orchestrator.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@ufiso/tsconfig": "workspace:*",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
