@@ -85,6 +85,9 @@ jobs:
       JWT_SECRET: ci-test-only
       COOKIE_SECRET: ci-test-only
       NODE_ENV: production
+      # Admin-SPA wird in CI nicht serviert — die E2E-Tests gehen ausschliesslich
+      # gegen die Store-API. medusa-config.ts liest das ENV.
+      MEDUSA_DISABLE_ADMIN: "true"
       # Storefront-Build greift hier auf das laufende Backend zu. Der
       # NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY wird im Step "Foundation-Seed"
       # via $GITHUB_ENV nachgereicht (deterministisch aus .seed-output.json).
