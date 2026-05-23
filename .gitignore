@@ -8,6 +8,7 @@ dist/
 .turbo/
 .medusa/
 build/
+*.tsbuildinfo
 
 # Env / Secrets (siehe Vault: Secrets-Management.md)
 .env
@@ -25,6 +26,7 @@ pnpm-debug.log*
 playwright-report/
 test-results/
 coverage/
+.lighthouseci/
 
 # OS / Editor
 .DS_Store
