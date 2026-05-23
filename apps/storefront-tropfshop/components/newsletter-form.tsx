@@ -17,6 +17,7 @@ export function NewsletterForm() {
     const form = event.currentTarget;
     const data = new FormData(form);
     const email = String(data.get("email") ?? "").trim();
+    const website = String(data.get("website") ?? "");
 
     setStatus("loading");
     setMessage("");
@@ -25,7 +26,7 @@ export function NewsletterForm() {
       const res = await fetch("/api/newsletter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, source: "pre-launch" }),
+        body: JSON.stringify({ email, source: "pre-launch", website }),
       });
       const body: { message?: string } = await res.json().catch(() => ({}));
 
@@ -65,6 +66,23 @@ export function NewsletterForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
+      {/*
+        Honeypot — Bots fuellen typischerweise alle Felder aus, Menschen
+        sehen das Feld nicht. Submits mit nicht-leerem `website` werden
+        serverseitig still verworfen.
+      */}
+      <div className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+        <label htmlFor="website">Website</label>
+        <input
+          id="website"
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          defaultValue=""
+        />
+      </div>
+
       <div className="flex flex-col gap-2 sm:flex-row">
         <label htmlFor={emailId} className="sr-only">
           E-Mail-Adresse

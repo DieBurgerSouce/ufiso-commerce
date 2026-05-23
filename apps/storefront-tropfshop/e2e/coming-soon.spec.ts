@@ -26,4 +26,18 @@ test.describe("Coming-Soon-Page", () => {
     await expect(email).toHaveAttribute("type", "email");
     await expect(email).toHaveAttribute("required", "");
   });
+
+  test("zeigt mindestens 4 Produkt-Tiles mit 'Bald verfügbar'-Badge", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const tilesSection = page.getByRole("region", {
+      name: /das wird's bei uns geben/i,
+    });
+    await expect(tilesSection).toBeVisible();
+
+    const badges = tilesSection.getByText(/bald verfügbar/i);
+    await expect(badges.first()).toBeVisible();
+    expect(await badges.count()).toBeGreaterThanOrEqual(4);
+  });
 });
