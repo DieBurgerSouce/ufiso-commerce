@@ -1,3 +1,5 @@
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { ExecArgs } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils";
 import {
@@ -433,6 +435,29 @@ export default async function seedFoundation({ container }: ExecArgs) {
     logger.info(`[seed] create: link api_key ↔ sales_channel`);
   } else {
     logger.info(`[seed] skip: link api_key ↔ sales_channel`);
+  }
+
+  // .seed-output.json — CI liest hier den Publishable Key und exportiert ihn
+  // als NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY fuer den Storefront-Build.
+  // Lokal wird die Datei mitgeschrieben, ist aber gitignored (apps/backend/.gitignore).
+  const outputPath = resolve(process.cwd(), ".seed-output.json");
+  try {
+    writeFileSync(
+      outputPath,
+      `${JSON.stringify(
+        {
+          publishableKey: apiKey.token,
+          salesChannelId: tropfshopChannel.id,
+          generatedAt: new Date().toISOString(),
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    logger.info(`[seed] wrote ${outputPath}`);
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    logger.warn(`[seed] could not write .seed-output.json: ${reason}`);
   }
 
   logger.info("──────────────────────────────────────────────");

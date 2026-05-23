@@ -43,9 +43,53 @@ jobs:
       - name: Build
         run: pnpm build
 
-  e2e:
-    name: Playwright (Storefront)
+  e2e-with-backend:
+    name: E2E (Storefront + Medusa)
     runs-on: ubuntu-latest
+
+    # Postgres + Redis als Services-Container. Health-Checks stellen sicher, dass
+    # die Backend-Migrations erst starten, wenn die DB wirklich bereit ist.
+    # Lokal laufen die Container ueber docker-compose.yml auf Ports 15432/16379;
+    # in CI exponieren wir die Default-Ports 5432/6379 (siehe DATABASE_URL unten).
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: medusa
+          POSTGRES_PASSWORD: medusa
+          POSTGRES_DB: medusa
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U medusa -d medusa"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      # Runtime-ENVs fuer das Backend (medusa-config.ts liest DATABASE_URL).
+      DATABASE_URL: postgres://medusa:medusa@localhost:5432/medusa
+      REDIS_URL: redis://localhost:6379
+      STORE_CORS: http://localhost:3000
+      ADMIN_CORS: http://localhost:9000
+      AUTH_CORS: http://localhost:3000,http://localhost:9000
+      JWT_SECRET: ci-test-only
+      COOKIE_SECRET: ci-test-only
+      NODE_ENV: production
+      # Storefront-Build greift hier auf das laufende Backend zu. Der
+      # NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY wird im Step "Foundation-Seed"
+      # via $GITHUB_ENV nachgereicht (deterministisch aus .seed-output.json).
+      NEXT_PUBLIC_MEDUSA_BACKEND_URL: http://localhost:9000
+
     steps:
       - uses: actions/checkout@v4
 
@@ -61,19 +105,138 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build storefront
+      - name: Backend build (.medusa/server)
+        run: pnpm --filter @ufiso/backend build
+
+      - name: Backend DB migrate
+        run: pnpm --filter @ufiso/backend db:migrate
+
+      - name: Foundation-Seed (schreibt .seed-output.json)
+        run: pnpm --filter @ufiso/backend seed
+
+      - name: Mock-Produkte seeden
+        run: pnpm --filter @ufiso/backend seed:products
+
+      - name: Publishable Key in $GITHUB_ENV exportieren
+        run: |
+          KEY=$(jq -r .publishableKey apps/backend/.seed-output.json)
+          if [ -z "$KEY" ] || [ "$KEY" = "null" ]; then
+            echo "::error::Publishable Key fehlt in apps/backend/.seed-output.json"
+            cat apps/backend/.seed-output.json || true
+            exit 1
+          fi
+          echo "NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=$KEY" >> "$GITHUB_ENV"
+
+      - name: Backend im Hintergrund starten
+        run: |
+          mkdir -p /tmp/ufiso-ci
+          pnpm --filter @ufiso/backend start \
+            > /tmp/ufiso-ci/backend.log 2>&1 &
+          echo $! > /tmp/ufiso-ci/backend.pid
+
+      - name: Auf Backend-Health warten (60 s)
+        run: npx --yes wait-on -t 60000 http://localhost:9000/health
+
+      - name: Backend-Logs in Step-Summary bei Fehler
+        if: failure()
+        run: |
+          {
+            echo "## Backend-Logs (Tail 200)"
+            echo ""
+            echo '```'
+            tail -200 /tmp/ufiso-ci/backend.log || echo "(keine Logs vorhanden)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Storefront-Build mit echtem Backend
         run: pnpm --filter @ufiso/storefront-tropfshop build
 
-      - name: Install Playwright browser
+      - name: Playwright-Browser installieren
         run: pnpm --filter @ufiso/storefront-tropfshop exec playwright install --with-deps chromium
 
-      - name: Run E2E smoke tests
+      - name: Storefront E2E-Tests gegen laufendes Backend
         run: pnpm --filter @ufiso/storefront-tropfshop test:e2e
 
-      - name: Upload Playwright report
+      - name: Backend stoppen
+        if: always()
+        run: |
+          if [ -f /tmp/ufiso-ci/backend.pid ]; then
+            kill "$(cat /tmp/ufiso-ci/backend.pid)" 2>/dev/null || true
+          fi
+
+      - name: Playwright-Report hochladen
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: apps/storefront-tropfshop/playwright-report/
           retention-days: 7
+
+      - name: Backend-Logs als Artifact hochladen
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-log
+          path: /tmp/ufiso-ci/backend.log
+          retention-days: 7
+
+  backend-integration:
+    name: Backend Integration-Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: medusa
+          POSTGRES_PASSWORD: medusa
+          POSTGRES_DB: medusa
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U medusa -d medusa"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # medusaIntegrationTestRunner liest DB_HOST/PORT/USERNAME/PASSWORD aus
+      # .env.test (NICHT DATABASE_URL). Lokal zeigen die Werte auf den
+      # Docker-Postgres (:15432); in CI rennen die Services auf :5432.
+      - name: .env.test fuer CI ueberschreiben
+        run: |
+          cat > apps/backend/.env.test <<EOF
+          DB_HOST=localhost
+          DB_PORT=5432
+          DB_USERNAME=medusa
+          DB_PASSWORD=medusa
+          REDIS_URL=redis://localhost:6379
+          JWT_SECRET=ci-test-only
+          COOKIE_SECRET=ci-test-only
+          EOF
+
+      - name: Integration-Tests (HTTP)
+        run: pnpm --filter @ufiso/backend test:integration:http
