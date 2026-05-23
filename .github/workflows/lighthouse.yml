@@ -1,0 +1,51 @@
+name: Lighthouse
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: lighthouse-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+jobs:
+  lighthouse:
+    name: Lighthouse CI (Storefront)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build storefront
+        run: pnpm --filter @ufiso/storefront-tropfshop build
+
+      - name: Run Lighthouse CI
+        # lhci autorun startet `next start` selbst (siehe lighthouserc.json),
+        # rennt 3 Audits pro URL und assertet die Schwellen aus dem Config-File.
+        # Backend ist NICHT erforderlich — Storefront degraded graceful.
+        run: pnpm --filter @ufiso/storefront-tropfshop lighthouse
+
+      - name: Upload Lighthouse reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: apps/storefront-tropfshop/.lighthouseci/
+          retention-days: 7
