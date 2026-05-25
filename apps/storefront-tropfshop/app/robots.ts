@@ -17,7 +17,12 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
+        // Phase-1-Default: nichts indexieren.
         disallow: "/",
+        // Ausnahmen: Datenschutz und Impressum sind Pflichtseiten, die
+        // auch in der Pre-Launch-Phase auffindbar sein muessen (Telemedien-
+        // gesetz, Sichtbarkeit fuer Aufsichtsbehoerden).
+        allow: ["/datenschutz", "/impressum"],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

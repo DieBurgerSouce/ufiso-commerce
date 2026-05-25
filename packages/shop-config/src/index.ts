@@ -6,4 +6,13 @@ export type {
   LegalConfig,
   RgbTriplet,
 } from "./types";
-export { tropfshopBrand, tropfshopLegal } from "./tropfshop/index";
+export type {
+  ShopKlaroConfig,
+  ShopKlaroPurpose,
+  ShopKlaroService,
+} from "./klaro-config";
+export {
+  tropfshopBrand,
+  tropfshopLegal,
+  tropfshopKlaroConfig,
+} from "./tropfshop/index";

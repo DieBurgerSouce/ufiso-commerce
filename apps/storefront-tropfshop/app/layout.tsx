@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { tropfshopBrand, tropfshopLegal } from "@ufiso/shop-config/tropfshop";
+import { KlaroProvider } from "@/components/klaro-provider";
+import { TestErrorBridge } from "@/components/test-error-bridge";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
@@ -93,7 +95,11 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {children}
+        <KlaroProvider />
+        <TestErrorBridge />
+      </body>
     </html>
   );
 }

@@ -19,6 +19,7 @@ autoInstallPeers: true
 # Native Builds (swc/esbuild/sharp) werden gebraucht; Telemetry bewusst aus.
 allowBuilds:
   "@medusajs/telemetry": false
+  "@parcel/watcher": false
   "@swc/core": true
   esbuild: true
   msgpackr-extract: true
