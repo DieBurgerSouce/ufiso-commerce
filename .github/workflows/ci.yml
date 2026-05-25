@@ -92,6 +92,10 @@ jobs:
       # NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY wird im Step "Foundation-Seed"
       # via $GITHUB_ENV nachgereicht (deterministisch aus .seed-output.json).
       NEXT_PUBLIC_MEDUSA_BACKEND_URL: http://localhost:9000
+      # Pino-Backend-Logger (Sprint 6, ADR-012). `info` = deterministisch, kein
+      # debug-Spam in den GitHub-Actions-Logs. LOGTAIL_SOURCE_TOKEN bleibt leer
+      # in CI — kein Transport zu BetterStack waehrend Tests.
+      LOG_LEVEL: info
 
     steps:
       - uses: actions/checkout@v4
@@ -239,6 +243,7 @@ jobs:
           REDIS_URL=redis://localhost:6379
           JWT_SECRET=ci-test-only
           COOKIE_SECRET=ci-test-only
+          LOG_LEVEL=info
           EOF
 
       - name: Integration-Tests (HTTP)

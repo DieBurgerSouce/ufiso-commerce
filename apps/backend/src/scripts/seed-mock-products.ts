@@ -1,6 +1,7 @@
 import { ExecArgs } from "@medusajs/framework/types";
-import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils";
+import { Modules } from "@medusajs/framework/utils";
 import { createProductsWorkflow } from "@medusajs/medusa/core-flows";
+import { createComponentLogger } from "../lib/logger";
 
 /**
  * UFISO / Tropfshop — Mock-Produkte fuer die Pre-Launch-Coming-Soon-Tiles.
@@ -138,7 +139,7 @@ const MOCK_PRODUCTS: MockProduct[] = [
 ];
 
 export default async function seedMockProducts({ container }: ExecArgs) {
-  const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
+  const logger = createComponentLogger("mock-products");
   const productService = container.resolve(Modules.PRODUCT);
   const salesChannelService = container.resolve(Modules.SALES_CHANNEL);
 
@@ -164,12 +165,24 @@ export default async function seedMockProducts({ container }: ExecArgs) {
 
   if (toCreate.length === 0) {
     logger.info(
+      {
+        event: "mock_products.skip_all",
+        total: MOCK_PRODUCTS.length,
+        created: 0,
+        skipped: MOCK_PRODUCTS.length,
+      },
       `Mock-Produkte: bereits alle ${MOCK_PRODUCTS.length} Eintraege vorhanden, nichts zu tun.`,
     );
     return;
   }
 
   logger.info(
+    {
+      event: "mock_products.create_start",
+      total: MOCK_PRODUCTS.length,
+      toCreate: toCreate.length,
+      skipped: MOCK_PRODUCTS.length - toCreate.length,
+    },
     `Mock-Produkte: ${toCreate.length} von ${MOCK_PRODUCTS.length} werden neu angelegt...`,
   );
 
@@ -199,11 +212,12 @@ export default async function seedMockProducts({ container }: ExecArgs) {
   });
 
   logger.info(
-    `Mock-Produkte angelegt: ${toCreate.map((p) => p.sku).join(", ")}`,
+    {
+      event: "mock_products.create_done",
+      created: toCreate.length,
+      skus: toCreate.map((p) => p.sku),
+      total: MOCK_PRODUCTS.length,
+    },
+    `Mock-Produkte angelegt: ${toCreate.map((p) => p.sku).join(", ")}. Tiles haben ${MOCK_PRODUCTS.length} Produkt(e).`,
   );
-  logger.info("──────────────────────────────────────────────");
-  logger.info(
-    `Coming-Soon-Tiles greifen jetzt auf ${MOCK_PRODUCTS.length} Produkt(e) zu (Channel: tropfshop).`,
-  );
-  logger.info("──────────────────────────────────────────────");
 }

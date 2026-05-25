@@ -20,6 +20,7 @@ import {
   updateStoresStep,
   updateStoresWorkflow,
 } from "@medusajs/medusa/core-flows";
+import { createComponentLogger } from "../lib/logger";
 
 /**
  * UFISO / Tropfshop — Foundation-Seed (idempotent).
@@ -77,7 +78,19 @@ const updateStoreCurrencies = createWorkflow(
 );
 
 export default async function seedFoundation({ container }: ExecArgs) {
-  const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
+  // Pino-Child statt Medusa-Container-Logger: strukturierte JSON-Logs in CI/Prod,
+  // pino-pretty lokal, optional BetterStack-Transport. Container-Logger bleibt
+  // fuer Medusa-Framework-Output unberuehrt (er wird hier nicht resolved).
+  const logger = createComponentLogger("foundation-seed");
+  const counts = { skip: 0, create: 0 };
+  const skip = (object: string, id: string) => {
+    counts.skip += 1;
+    logger.info({ event: "seed.skip", object, id }, `[seed] skip: ${object} (id=${id})`);
+  };
+  const created = (object: string, id: string) => {
+    counts.create += 1;
+    logger.info({ event: "seed.create", object, id }, `[seed] create: ${object} (id=${id})`);
+  };
   const link = container.resolve(ContainerRegistrationKeys.LINK);
   const fulfillmentModuleService = container.resolve(Modules.FULFILLMENT);
   const salesChannelModuleService = container.resolve(Modules.SALES_CHANNEL);
@@ -87,7 +100,7 @@ export default async function seedFoundation({ container }: ExecArgs) {
   const stockLocationModuleService = container.resolve(Modules.STOCK_LOCATION);
   const apiKeyModuleService = container.resolve(Modules.API_KEY);
 
-  logger.info("Seeding UFISO foundation data (idempotent)...");
+  logger.info({ event: "seed.start" }, "Seeding UFISO foundation data (idempotent)...");
   const [store] = await storeModuleService.listStores();
 
   // ── Sales Channel: tropfshop ───────────────────────────────────────────────
@@ -97,9 +110,7 @@ export default async function seedFoundation({ container }: ExecArgs) {
   });
 
   if (tropfshopChannel) {
-    logger.info(
-      `[seed] skip: sales_channel "${SALES_CHANNEL_NAME}" (id=${tropfshopChannel.id})`,
-    );
+    skip("sales_channel", tropfshopChannel.id);
   } else {
     const { result } = await createSalesChannelsWorkflow(container).run({
       input: {
@@ -112,9 +123,7 @@ export default async function seedFoundation({ container }: ExecArgs) {
       },
     });
     tropfshopChannel = result[0];
-    logger.info(
-      `[seed] create: sales_channel "${tropfshopChannel.name}" (id=${tropfshopChannel.id})`,
-    );
+    created("sales_channel", tropfshopChannel.id);
   }
 
   // ── Store: Default-Waehrung EUR + Default Sales Channel ────────────────────
@@ -158,18 +167,18 @@ export default async function seedFoundation({ container }: ExecArgs) {
   }
 
   if (regionsToCreate.length > 0) {
-    const { result: created } = await createRegionsWorkflow(container).run({
+    const { result: createdRegions } = await createRegionsWorkflow(container).run({
       input: { regions: regionsToCreate },
     });
-    for (const r of created) {
+    for (const r of createdRegions) {
       regionByName.set(r.name, r);
-      logger.info(`[seed] create: region "${r.name}" (id=${r.id})`);
+      created("region", r.id);
     }
   }
   for (const name of [REGION_DE_NAME, REGION_AT_NAME]) {
     const existed = existingRegions.find((r) => r.name === name);
     if (existed) {
-      logger.info(`[seed] skip: region "${name}" (id=${existed.id})`);
+      skip("region", existed.id);
     }
   }
   const regionDE = regionByName.get(REGION_DE_NAME)!;
@@ -204,13 +213,11 @@ export default async function seedFoundation({ container }: ExecArgs) {
   if (taxesToCreate.length > 0) {
     await createTaxRegionsWorkflow(container).run({ input: taxesToCreate });
     for (const t of taxesToCreate) {
-      logger.info(`[seed] create: tax_region country=${t.country_code}`);
+      created("tax_region", t.country_code);
     }
   }
   for (const tr of existingTaxRegions) {
-    logger.info(
-      `[seed] skip: tax_region country=${tr.country_code} (id=${tr.id})`,
-    );
+    skip("tax_region", tr.id);
   }
 
   // ── Stock Location: Solingen Hauptlager ────────────────────────────────────
@@ -219,11 +226,9 @@ export default async function seedFoundation({ container }: ExecArgs) {
     name: STOCK_LOCATION_NAME,
   });
   if (stockLocation) {
-    logger.info(
-      `[seed] skip: stock_location "${STOCK_LOCATION_NAME}" (id=${stockLocation.id})`,
-    );
+    skip("stock_location", stockLocation.id);
   } else {
-    const { result: created } = await createStockLocationsWorkflow(
+    const { result: createdLocations } = await createStockLocationsWorkflow(
       container,
     ).run({
       input: {
@@ -235,10 +240,8 @@ export default async function seedFoundation({ container }: ExecArgs) {
         ],
       },
     });
-    stockLocation = created[0];
-    logger.info(
-      `[seed] create: stock_location "${stockLocation.name}" (id=${stockLocation.id})`,
-    );
+    stockLocation = createdLocations[0];
+    created("stock_location", stockLocation.id);
   }
 
   await updateStoresWorkflow(container).run({
@@ -259,13 +262,9 @@ export default async function seedFoundation({ container }: ExecArgs) {
       [Modules.STOCK_LOCATION]: { stock_location_id: stockLocation.id },
       [Modules.FULFILLMENT]: { fulfillment_provider_id: FULFILLMENT_PROVIDER_ID },
     });
-    logger.info(
-      `[seed] create: link stock_location ↔ fulfillment_provider (${FULFILLMENT_PROVIDER_ID})`,
-    );
+    created("link:stock_location↔fulfillment_provider", FULFILLMENT_PROVIDER_ID);
   } else {
-    logger.info(
-      `[seed] skip: link stock_location ↔ fulfillment_provider (${FULFILLMENT_PROVIDER_ID})`,
-    );
+    skip("link:stock_location↔fulfillment_provider", FULFILLMENT_PROVIDER_ID);
   }
 
   // ── Fulfillment: Shipping Profile ──────────────────────────────────────────
@@ -274,17 +273,13 @@ export default async function seedFoundation({ container }: ExecArgs) {
     type: "default",
   });
   if (shippingProfile) {
-    logger.info(
-      `[seed] skip: shipping_profile type=default (id=${shippingProfile.id})`,
-    );
+    skip("shipping_profile", shippingProfile.id);
   } else {
     const { result } = await createShippingProfilesWorkflow(container).run({
       input: { data: [{ name: "Standard", type: "default" }] },
     });
     shippingProfile = result[0];
-    logger.info(
-      `[seed] create: shipping_profile type=default (id=${shippingProfile.id})`,
-    );
+    created("shipping_profile", shippingProfile.id);
   }
 
   // ── Fulfillment-Set "Versand Solingen" ─────────────────────────────────────
@@ -294,9 +289,7 @@ export default async function seedFoundation({ container }: ExecArgs) {
     { relations: ["service_zones"] },
   );
   if (fulfillmentSet) {
-    logger.info(
-      `[seed] skip: fulfillment_set "${FULFILLMENT_SET_NAME}" (id=${fulfillmentSet.id})`,
-    );
+    skip("fulfillment_set", fulfillmentSet.id);
   } else {
     fulfillmentSet = await fulfillmentModuleService.createFulfillmentSets({
       name: FULFILLMENT_SET_NAME,
@@ -311,9 +304,7 @@ export default async function seedFoundation({ container }: ExecArgs) {
         },
       ],
     });
-    logger.info(
-      `[seed] create: fulfillment_set "${fulfillmentSet.name}" (id=${fulfillmentSet.id})`,
-    );
+    created("fulfillment_set", fulfillmentSet.id);
   }
 
   // ── Link: Stock-Location ↔ Fulfillment-Set ─────────────────────────────────
@@ -326,13 +317,9 @@ export default async function seedFoundation({ container }: ExecArgs) {
       [Modules.STOCK_LOCATION]: { stock_location_id: stockLocation.id },
       [Modules.FULFILLMENT]: { fulfillment_set_id: fulfillmentSet.id },
     });
-    logger.info(
-      `[seed] create: link stock_location ↔ fulfillment_set (id=${fulfillmentSet.id})`,
-    );
+    created("link:stock_location↔fulfillment_set", fulfillmentSet.id);
   } else {
-    logger.info(
-      `[seed] skip: link stock_location ↔ fulfillment_set (id=${fulfillmentSet.id})`,
-    );
+    skip("link:stock_location↔fulfillment_set", fulfillmentSet.id);
   }
 
   // ── Shipping Option "Standardversand" ──────────────────────────────────────
@@ -349,9 +336,7 @@ export default async function seedFoundation({ container }: ExecArgs) {
       service_zone: { id: serviceZone.id },
     });
   if (existingShippingOption) {
-    logger.info(
-      `[seed] skip: shipping_option "${SHIPPING_OPTION_NAME}" (id=${existingShippingOption.id})`,
-    );
+    skip("shipping_option", existingShippingOption.id);
   } else {
     await createShippingOptionsWorkflow(container).run({
       input: [
@@ -377,7 +362,7 @@ export default async function seedFoundation({ container }: ExecArgs) {
         },
       ],
     });
-    logger.info(`[seed] create: shipping_option "${SHIPPING_OPTION_NAME}"`);
+    created("shipping_option", SHIPPING_OPTION_NAME);
   }
 
   // ── Link: Sales Channel ↔ Stock Location ───────────────────────────────────
@@ -392,13 +377,9 @@ export default async function seedFoundation({ container }: ExecArgs) {
     await linkSalesChannelsToStockLocationWorkflow(container).run({
       input: { id: stockLocation.id, add: [tropfshopChannel.id] },
     });
-    logger.info(
-      `[seed] create: link sales_channel ↔ stock_location`,
-    );
+    created("link:sales_channel↔stock_location", tropfshopChannel.id);
   } else {
-    logger.info(
-      `[seed] skip: link sales_channel ↔ stock_location`,
-    );
+    skip("link:sales_channel↔stock_location", tropfshopChannel.id);
   }
 
   // ── Publishable API Key fuer das Storefront ────────────────────────────────
@@ -408,10 +389,10 @@ export default async function seedFoundation({ container }: ExecArgs) {
     type: "publishable",
   });
   if (apiKey) {
-    logger.info(`[seed] skip: api_key "${API_KEY_TITLE}" (id=${apiKey.id})`);
+    skip("api_key", apiKey.id);
   } else {
     const {
-      result: [created],
+      result: [createdKey],
     } = await createApiKeysWorkflow(container).run({
       input: {
         api_keys: [
@@ -419,8 +400,8 @@ export default async function seedFoundation({ container }: ExecArgs) {
         ],
       },
     });
-    apiKey = created;
-    logger.info(`[seed] create: api_key "${API_KEY_TITLE}" (id=${apiKey.id})`);
+    apiKey = createdKey;
+    created("api_key", apiKey.id);
   }
 
   // ── Link: API Key ↔ Sales Channel ──────────────────────────────────────────
@@ -432,9 +413,9 @@ export default async function seedFoundation({ container }: ExecArgs) {
     await linkSalesChannelsToApiKeyWorkflow(container).run({
       input: { id: apiKey.id, add: [tropfshopChannel.id] },
     });
-    logger.info(`[seed] create: link api_key ↔ sales_channel`);
+    created("link:api_key↔sales_channel", apiKey.id);
   } else {
-    logger.info(`[seed] skip: link api_key ↔ sales_channel`);
+    skip("link:api_key↔sales_channel", apiKey.id);
   }
 
   // .seed-output.json — CI liest hier den Publishable Key und exportiert ihn
@@ -454,15 +435,14 @@ export default async function seedFoundation({ container }: ExecArgs) {
         2,
       )}\n`,
     );
-    logger.info(`[seed] wrote ${outputPath}`);
+    logger.info({ event: "seed.output_written", path: outputPath }, `[seed] wrote ${outputPath}`);
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
-    logger.warn(`[seed] could not write .seed-output.json: ${reason}`);
+    logger.warn({ event: "seed.output_failed", reason }, `[seed] could not write .seed-output.json: ${reason}`);
   }
 
-  logger.info("──────────────────────────────────────────────");
-  logger.info("Foundation-Seed abgeschlossen (idempotent).");
-  logger.info(`Publishable API Key (-> Storefront .env.local):`);
-  logger.info(`  NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=${apiKey.token}`);
-  logger.info("──────────────────────────────────────────────");
+  logger.info(
+    { event: "seed.complete", counts },
+    `Foundation-Seed abgeschlossen (idempotent): ${counts.skip} skip, ${counts.create} create.`,
+  );
 }
