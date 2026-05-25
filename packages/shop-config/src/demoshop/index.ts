@@ -1,0 +1,1 @@
+export { demoshopKlaroConfig } from "./klaro";

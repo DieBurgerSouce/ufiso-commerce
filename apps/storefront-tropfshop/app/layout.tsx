@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { tropfshopBrand, tropfshopLegal } from "@ufiso/shop-config/tropfshop";
+import {
+  tropfshopBrand,
+  tropfshopKlaroConfig,
+  tropfshopLegal,
+} from "@ufiso/shop-config/tropfshop";
 import { KlaroProvider } from "@/components/klaro-provider";
 import { TestErrorBridge } from "@/components/test-error-bridge";
 import "./globals.css";
@@ -97,7 +101,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         {children}
-        <KlaroProvider />
+        <KlaroProvider config={tropfshopKlaroConfig} />
         {/* TestErrorBridge nur, wenn explizit aktiviert (E2E-Setup setzt das
             Flag via webServer-env). In Production-Builds liegt der Helper damit
             nicht auf `window.__reportClientError` — Test-Brueckenflaeche bleibt

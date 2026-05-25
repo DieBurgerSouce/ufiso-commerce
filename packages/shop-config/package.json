@@ -7,14 +7,19 @@
   "exports": {
     ".": "./src/index.ts",
     "./tropfshop": "./src/tropfshop/index.ts",
+    "./demoshop": "./src/demoshop/index.ts",
     "./types": "./src/types.ts",
-    "./klaro-config": "./src/klaro-config.ts"
+    "./klaro-config": "./src/klaro-config.ts",
+    "./klaro-config-builder": "./src/klaro-config-builder.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@ufiso/tsconfig": "workspace:*",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
   }
 }

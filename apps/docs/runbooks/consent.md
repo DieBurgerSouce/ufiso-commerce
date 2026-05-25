@@ -73,7 +73,7 @@ Beispiel: Stripe Checkout-Loader in Phase 2.
 ### onlyOnce-Stolperstein (Sprint 8)
 
 `buildKlaroConfig()` in
-`apps/storefront-tropfshop/lib/klaro-config-builder.ts` setzt fuer jeden
+`packages/shop-config/src/klaro-config-builder.ts` setzt fuer jeden
 Service standardmaessig `onlyOnce: true` (Klaro-Doku-Empfehlung fuer
 Auto-Snippet-Services). Klaro fuehrt den Service-Callback dann **nur
 einmal pro Consent-Toggle** aus.
