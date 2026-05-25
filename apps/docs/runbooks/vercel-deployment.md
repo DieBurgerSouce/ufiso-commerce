@@ -21,20 +21,21 @@ Backend-Deploy.
 
 ## Projekt-Setup (einmalig)
 
-1. Vercel-Account: `ufiso.solingen@gmail.com` (Hobby-Tier reicht fuer
-   Pre-Launch).
+1. Vercel-Account (Hobby-Tier reicht fuer Pre-Launch).
 2. "New Project" → GitHub-Repo `dieburgersouce/ufiso-shop` importieren.
-3. **Root Directory**: `apps/storefront-tropfshop`.
-4. **Framework Preset**: Next.js (auto-detect).
-5. **Build & Output**:
-   - Build Command:
-     `cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @ufiso/storefront-tropfshop build`
-   - Output Directory: `.next` (Default).
-   - Install Command: `pnpm install --frozen-lockfile` (Root-Level).
-   - Node Version: `22.x`.
-   - Turborepo-Filter sorgt dafuer, dass nur das Storefront + seine
-     Workspace-Deps gebaut werden (`@ufiso/shop-config`).
-6. **Region**: Frankfurt (`fra1`) — EU-Datenhoheit.
+3. **Root Directory**: `apps/storefront-tropfshop` (Vercel-GUI).
+4. **Framework Preset**: Next.js (auto-detect via
+   `apps/storefront-tropfshop/vercel.json`).
+5. **Build & Output**: kommt aus `apps/storefront-tropfshop/vercel.json`:
+   - `installCommand`: `cd ../.. && pnpm install --frozen-lockfile`
+     (Workspace-Resolutions vom Repo-Root).
+   - `buildCommand`:
+     `cd ../.. && pnpm --filter @ufiso/storefront-tropfshop build`
+     (Turborepo-Filter — nur Storefront + Workspace-Deps wie
+     `@ufiso/shop-config`).
+   - `regions`: `["fra1"]` — EU-Datenhoheit.
+   - Output Directory bleibt Default `.next` (relativ zum Root-Dir).
+   - Node Version: `22.x` (in Vercel-GUI → Settings → Build & Development).
 
 ## Environment Variables (Preview + Production)
 
