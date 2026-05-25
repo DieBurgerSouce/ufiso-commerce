@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
-    "lighthouse": "lhci autorun"
+    "lighthouse": "lhci autorun",
+    "lighthouse:production": "lhci autorun --config=lighthouserc.production.json"
   },
   "dependencies": {
     "@logtail/pino": "^0.5.8",
