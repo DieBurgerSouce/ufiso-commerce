@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./tropfshop": "./src/tropfshop/index.ts",
-    "./types": "./src/types.ts"
+    "./types": "./src/types.ts",
+    "./klaro-config": "./src/klaro-config.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

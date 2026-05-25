@@ -19,3 +19,64 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+
+/*
+ * Klaro-Theme-Override (BFSG / WCAG 2.1 AA).
+ *
+ * Default-Theme von Klaro 0.7 verfehlt das 4.5:1-Kontrast-Ziel auf
+ * Links und Buttons (axe-core meldet `color-contrast` als serious).
+ * Hier setzen wir die relevanten CSS-Variablen so, dass Klaro
+ * - Erfolg-/Akzeptieren-Buttons in einem dunklen Grün rendert
+ * - Links in Hellem Weiss auf dem dunklen Modal-Hintergrund hervorhebt
+ * - Modaler Hintergrund bleibt klar lesbar
+ *
+ * Quelle der Variablen: klaro/scss (gleicher Naming wie Klaro 0.7 Docs).
+ */
+.klaro {
+  --green1: #0f6b4f;
+  --green2: #138a64;
+  --light1: #ffffff;
+  --light2: #d6d6d6;
+  --dark1: #1c1917;
+  --dark2: #3f3f3f;
+  --button-text-color: #ffffff;
+}
+
+/*
+ * Klaro injiziert sein CSS dynamisch nach unseren globals — darum wuerden
+ * gleichsame Selektoren von ihm gewinnen. `!important` hier ist gezielt
+ * und auf den Banner-Scope begrenzt; macht WCAG-AA-Kontrast verbindlich.
+ */
+.klaro .cookie-modal a,
+.klaro .cookie-notice a,
+.klaro .context-notice a {
+  color: #ffffff !important;
+  text-decoration: underline !important;
+}
+
+.klaro .cm-btn.cm-btn-success,
+.klaro .cm-btn.cm-btn-success-var {
+  background-color: var(--green1) !important;
+  color: #ffffff !important;
+}
+
+/*
+ * Learn-More / Info-Button (Klaro 0.7 tippt "lern-more" im DOM).
+ * Standard-Blau hat zu wenig Kontrast — wir nehmen einen klaren Dunkelblau-
+ * Ton mit weisser Schrift.
+ */
+.klaro .cm-btn.cm-btn-info,
+.klaro .cm-btn.cm-btn-learn-more,
+.klaro .cm-btn.cm-btn-lern-more {
+  background-color: #1d4ed8 !important;
+  color: #ffffff !important;
+}
+
+.klaro .cm-btn {
+  /* Sichtbarer Fokus-Ring fuer Tastatur-Navigation (BFSG). */
+  outline-offset: 2px;
+}
+
+.klaro .cm-btn:focus-visible {
+  outline: 2px solid #ffffff;
+}

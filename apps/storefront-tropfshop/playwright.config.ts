@@ -1,6 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3000;
+// PORT kann per ENV ueberschrieben werden — Default 3000 (CORS/CI), lokal
+// koennen Tests mit `PORT=3001 npx playwright test` auf einen freien Port
+// ausweichen, falls ein anderer `next start` blockiert.
+const PORT = Number(process.env.PORT ?? "3000");
 const baseURL = `http://localhost:${PORT}`;
 
 /**
@@ -25,9 +28,15 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm start",
+    // Direkt `next start` ueber den lokalen Bin — bypasst die pnpm-Vor-
+    // Pruefung `verify-deps-before-run`, die bei ignorierten
+    // Build-Scripts (z. B. `@parcel/watcher`) den Boot fehlschlagen laesst.
+    command: "node node_modules/next/dist/bin/next start",
     url: baseURL,
     timeout: 120_000,
     reuseExistingServer: !process.env.CI,
+    env: {
+      PORT: String(PORT),
+    },
   },
 });

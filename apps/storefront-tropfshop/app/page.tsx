@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { tropfshopBrand } from "@ufiso/shop-config/tropfshop";
 import { ComingSoonTiles } from "@/components/coming-soon-tiles";
 import { NewsletterForm } from "@/components/newsletter-form";
+import { CookieSettingsButton } from "@/components/cookie-settings-button";
 import { pingMedusaConnection } from "@/lib/medusa-smoke";
 
 export default async function ComingSoonPage() {
@@ -52,19 +54,39 @@ export default async function ComingSoonPage() {
       <ComingSoonTiles />
 
       <footer className="relative border-t border-white/10 px-6 py-6">
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-1 text-xs text-neutral-500 sm:flex-row sm:items-center sm:justify-between">
-          <span>
-            © {year} {tropfshopBrand.legalName} — {tropfshopBrand.name}
-          </span>
-          <span>
-            Kontakt:{" "}
-            <a
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 text-xs text-neutral-500">
+          <nav
+            aria-label="Rechtliches"
+            className="flex flex-wrap gap-x-5 gap-y-2"
+          >
+            <Link
               className="underline underline-offset-2 hover:text-neutral-300"
-              href={`mailto:${tropfshopBrand.contact.email}`}
+              href="/datenschutz"
             >
-              {tropfshopBrand.contact.email}
-            </a>
-          </span>
+              Datenschutz
+            </Link>
+            <Link
+              className="underline underline-offset-2 hover:text-neutral-300"
+              href="/impressum"
+            >
+              Impressum
+            </Link>
+            <CookieSettingsButton />
+          </nav>
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              © {year} {tropfshopBrand.legalName} — {tropfshopBrand.name}
+            </span>
+            <span>
+              Kontakt:{" "}
+              <a
+                className="underline underline-offset-2 hover:text-neutral-300"
+                href={`mailto:${tropfshopBrand.contact.email}`}
+              >
+                {tropfshopBrand.contact.email}
+              </a>
+            </span>
+          </div>
         </div>
       </footer>
     </main>

@@ -2,18 +2,19 @@
 
 import { useEffect } from "react";
 import { tropfshopBrand } from "@ufiso/shop-config/tropfshop";
+import { reportClientError } from "@/lib/report-client-error";
 
 /**
  * Global Error Boundary — faengt Render-Fehler im Root-Layout selbst ab.
  * Eigenes <html>/<body>, weil das Root-Layout im Fehlerfall NICHT greift.
  *
- * Bei Mount POSTet sie den Fehler nach /api/log-client-error (Server-Pino-
- * Logger -> BetterStack falls Token gesetzt). Klaro-Consent-Check passiert
- * server-side in der Route (siehe lib/consent.ts).
+ * Telemetrie-Gate liegt in `reportClientError` (prueft
+ * `hasErrorTrackingConsent()` vor jedem POST). Ohne Consent: stiller Drop,
+ * Fallback-UI bleibt sichtbar.
  *
- * Sprint-6-Stand: minimaler, brand-konformer Fallback. Cart/Checkout/Auth
- * kommen erst Phase 2 — bis dahin reicht "irgendwas geknallt, ladet die
- * Seite neu".
+ * Re-Eval bei Consent-Aenderung waere hier wirkungslos, weil der Effect
+ * nur einmal pro Render-Fehler laeuft. Wer Telemetrie nachtraeglich
+ * aktiviert, sendet erst nach dem naechsten Fehler.
  */
 export default function GlobalError({
   error,
@@ -23,24 +24,10 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    const payload = {
+    void reportClientError({
       message: error.message,
       stack: error.stack,
       digest: error.digest,
-      pathname:
-        typeof window !== "undefined" ? window.location.pathname : undefined,
-    };
-
-    // Best-effort POST. Failure ist kein Drama — der User sieht eh die
-    // Fallback-UI, und wir wollen den globalen Error-Handler nicht
-    // selbst zu einer Quelle weiterer Fehler machen.
-    fetch("/api/log-client-error", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      keepalive: true,
-    }).catch(() => {
-      // Stummschalten — kein Re-Throw.
     });
   }, [error]);
 
