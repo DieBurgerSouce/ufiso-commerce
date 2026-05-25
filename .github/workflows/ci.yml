@@ -156,6 +156,13 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Storefront-Build mit echtem Backend
+        # NEXT_PUBLIC_ENABLE_TEST_BRIDGE mountet `<TestErrorBridge />` in
+        # `app/layout.tsx` (siehe Sprint-8-Hardening + ADR-014). Ohne das
+        # Flag fehlt `window.__reportClientError`, und `consent.spec.ts`
+        # schlaegt fehl. Production-Builds (Vercel-Preview, spaeter Prod)
+        # bekommen das Flag absichtlich NICHT.
+        env:
+          NEXT_PUBLIC_ENABLE_TEST_BRIDGE: "1"
         run: pnpm --filter @ufiso/storefront-tropfshop build
 
       - name: Playwright-Browser installieren

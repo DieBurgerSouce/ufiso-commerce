@@ -98,7 +98,13 @@ export default function RootLayout({
       <body className={inter.className}>
         {children}
         <KlaroProvider />
-        <TestErrorBridge />
+        {/* TestErrorBridge nur, wenn explizit aktiviert (E2E-Setup setzt das
+            Flag via webServer-env). In Production-Builds liegt der Helper damit
+            nicht auf `window.__reportClientError` — Test-Brueckenflaeche bleibt
+            ausserhalb des oeffentlichen Bundles. */}
+        {process.env.NEXT_PUBLIC_ENABLE_TEST_BRIDGE === "1" ? (
+          <TestErrorBridge />
+        ) : null}
       </body>
     </html>
   );

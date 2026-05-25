@@ -53,6 +53,7 @@ Beispiel: Stripe Checkout-Loader in Phase 2.
      cookies: [/^__stripe_/, "stripe-mid"],
      default: true,
      required: true,
+     onlyOnce: false, // siehe "onlyOnce-Stolperstein" weiter unten
    },
    ```
 
@@ -68,6 +69,34 @@ Beispiel: Stripe Checkout-Loader in Phase 2.
    `apps/storefront-tropfshop/lib/consent.ts` anlegen.
 5. E2E-Test in `apps/storefront-tropfshop/e2e/consent.spec.ts`
    erweitern: Banner-Buttons + Cookie-Assertion.
+
+### onlyOnce-Stolperstein (Sprint 8)
+
+`buildKlaroConfig()` in
+`apps/storefront-tropfshop/lib/klaro-config-builder.ts` setzt fuer jeden
+Service standardmaessig `onlyOnce: true` (Klaro-Doku-Empfehlung fuer
+Auto-Snippet-Services). Klaro fuehrt den Service-Callback dann **nur
+einmal pro Consent-Toggle** aus.
+
+Fuer die Phase-1-Services `betterstack-telemetry` + `brevo-doi` ist das
+egal, weil sie keinen Auto-Loader haben — der Frontend-Reporter liest
+nur den Cookie und sendet selbst.
+
+**Aber** Phase-2-Services mit Auto-Snippet (typisch: Stripe Checkout-
+Loader, Plausible-Analytics) brauchen `onlyOnce: false`:
+
+- Stripe laedt sein Skript je nach Route nach (Checkout vs. Customer-
+  Portal). Mit `onlyOnce: true` bleibt der zweite Load aus, und der
+  Checkout-Pfad bricht still.
+- Plausible reinitialisiert sich bei SPA-Navigation. Mit `onlyOnce: true`
+  feuert das `page-view`-Event nur beim ersten Mount.
+
+Vor Sprint > 8 (sobald Stripe oder Plausible reinkommt) im jeweiligen
+Brand-Modul `onlyOnce: false` explizit setzen — die Brand-Datei ueber-
+schreibt den Builder-Default ueber `service.onlyOnce ?? true` in
+`klaro-config-builder.ts`. Im Builder-Default selbst NICHT aendern,
+damit existierende No-Snippet-Services nicht versehentlich doppelt
+feuern.
 
 ## Consent debuggen
 
