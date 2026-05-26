@@ -22,7 +22,7 @@ Backend-Deploy.
 ## Projekt-Setup (einmalig)
 
 1. Vercel-Account (Hobby-Tier reicht fuer Pre-Launch).
-2. "New Project" → GitHub-Repo `dieburgersouce/ufiso-shop` importieren.
+2. "New Project" → GitHub-Repo `DieBurgerSouce/ufiso-commerce` importieren.
 3. **Root Directory**: `apps/storefront-tropfshop` (Vercel-GUI).
 4. **Framework Preset**: Next.js (auto-detect via
    `apps/storefront-tropfshop/vercel.json`).

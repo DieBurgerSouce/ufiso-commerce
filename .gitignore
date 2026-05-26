@@ -28,6 +28,12 @@ test-results/
 coverage/
 .lighthouseci/
 
+# Playwright-MCP-Browser-Session-Artefakte (Screenshots, Console-Logs)
+# Sprint 9 hat sie repo-root abgelegt — Test-Artefakte, NICHT committen
+# (koennen sensitive UI-Inhalte enthalten: ENV-Setup-Pages, Tokens etc.).
+.playwright-mcp/
+/*.png
+
 # OS / Editor
 .DS_Store
 Thumbs.db
