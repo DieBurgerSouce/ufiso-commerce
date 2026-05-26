@@ -66,5 +66,36 @@ export async function POST(req: NextRequest) {
     `client error on ${safe.pathname ?? "(unknown path)"}: ${safe.message ?? "(no message)"}`,
   );
 
+  // Direkter HTTP-POST nach BetterStack (Phase-1-Bruecke auf Vercel):
+  // Der Pino-Transport-Worker findet `@logtail/pino` im Lambda-Bundle
+  // nicht (Sprint-9-Erkenntnis, siehe lib/logger.ts). Statt dem
+  // Worker-Pfad schicken wir das Event hier direkt per fetch — kein
+  // Worker, kein Modul-Resolve-Problem. Best-effort (Fail = stiller
+  // Drop, damit der Reporter nicht selbst zum Fehler wird).
+  const ingestHost = process.env.LOGTAIL_INGESTING_HOST?.trim();
+  const sourceToken = process.env.LOGTAIL_SOURCE_TOKEN?.trim();
+  if (ingestHost && sourceToken && process.env.VERCEL) {
+    const event = {
+      dt: new Date().toISOString(),
+      level: "error",
+      message: `client error on ${safe.pathname ?? "(unknown path)"}: ${safe.message ?? "(no message)"}`,
+      service: "ufiso-storefront-tropfshop",
+      env: process.env.NODE_ENV || "production",
+      component: "client-error",
+      event_name: "client.error",
+      ...safe,
+    };
+    void fetch(`https://${ingestHost}/`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${sourceToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(event),
+    }).catch(() => {
+      // Stiller Drop — Reporter darf nicht selbst zur Fehlerquelle werden.
+    });
+  }
+
   return new NextResponse(null, { status: 204 });
 }
