@@ -78,12 +78,12 @@ export async function POST(req: NextRequest) {
     const event = {
       dt: new Date().toISOString(),
       level: "error",
-      message: `client error on ${safe.pathname ?? "(unknown path)"}: ${safe.message ?? "(no message)"}`,
       service: "ufiso-storefront-tropfshop",
       env: process.env.NODE_ENV || "production",
       component: "client-error",
       event_name: "client.error",
       ...safe,
+      message: `client error on ${safe.pathname ?? "(unknown path)"}: ${safe.message ?? "(no message)"}`,
     };
     void fetch(`https://${ingestHost}/`, {
       method: "POST",
