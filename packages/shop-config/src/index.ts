@@ -16,3 +16,4 @@ export {
   tropfshopLegal,
   tropfshopKlaroConfig,
 } from "./tropfshop/index";
+export { demoshopKlaroConfig } from "./demoshop/index";

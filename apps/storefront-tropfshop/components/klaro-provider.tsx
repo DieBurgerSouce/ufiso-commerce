@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { tropfshopKlaroConfig } from "@ufiso/shop-config/tropfshop";
+import type { ShopKlaroConfig } from "@ufiso/shop-config/klaro-config";
 import type { KlaroManager, KlaroWatcherUpdate } from "klaro";
 import {
   buildKlaroConfig,
   type KlaroNativeConfig,
-} from "@/lib/klaro-config-builder";
+} from "@ufiso/shop-config/klaro-config-builder";
 
 /**
  * Klaro-Provider — laedt Klaro client-side, registriert die Brand-Config
@@ -19,11 +19,12 @@ import {
  * intern auf `window` zu — der dynamische Import garantiert, dass der
  * Module-Body nie server-side ausgewertet wird.
  *
- * Multi-Brand: Die Brand-Config kommt aus `@ufiso/shop-config/tropfshop`
- * und wird ueber `buildKlaroConfig` in Klaros internes Format uebersetzt.
- * Fuer einen zweiten Shop (Hofladen etc.) wird hier nur der Import auf das
- * andere Brand-Modul umgestellt — alle Texte/Services kommen aus dem
- * Brand-Modul.
+ * Multi-Brand (Sprint 8): Die Brand-Config kommt als Prop herein — der
+ * Provider selbst kennt KEINE Brand. `apps/storefront-tropfshop/app/layout.tsx`
+ * uebergibt `tropfshopKlaroConfig`; eine spaetere Storefront-App fuer einen
+ * anderen Shop importiert ihre eigene `ShopKlaroConfig` und gibt die hier
+ * rein. Damit ist der Provider Brand-agnostisch und kann ohne Code-Duplikat
+ * in ein internes Package extrahiert werden, sobald der zweite Shop steht.
  *
  * Side-Effects beim Mount:
  *  1. `klaro.setup(config)` — registriert Config und rendert das Banner,
@@ -38,12 +39,12 @@ import {
  * Teardown noetig. Watcher-Handler wird via `unwatch()` entfernt, falls
  * der Provider sich tatsaechlich unmounted (z. B. in Tests).
  */
-export function KlaroProvider() {
+export function KlaroProvider({ config }: { config: ShopKlaroConfig }) {
   useEffect(() => {
     let cancelled = false;
     let unwatch: (() => void) | undefined;
 
-    const config: KlaroNativeConfig = buildKlaroConfig(tropfshopKlaroConfig);
+    const nativeConfig: KlaroNativeConfig = buildKlaroConfig(config);
 
     import("klaro")
       .then((mod) => {
@@ -58,9 +59,9 @@ export function KlaroProvider() {
             : (mod as unknown as { default: typeof mod }).default
         ) as typeof mod;
 
-        klaro.setup(config);
+        klaro.setup(nativeConfig);
 
-        const manager = klaro.getManager(config);
+        const manager = klaro.getManager(nativeConfig);
 
         const update: KlaroWatcherUpdate = (
           _manager: KlaroManager,
@@ -83,7 +84,7 @@ export function KlaroProvider() {
         };
         klaroWindow.__klaro = {
           show: () => {
-            klaro.show(config);
+            klaro.show(nativeConfig);
           },
         };
       })
@@ -98,7 +99,7 @@ export function KlaroProvider() {
       cancelled = true;
       unwatch?.();
     };
-  }, []);
+  }, [config]);
 
   return null;
 }

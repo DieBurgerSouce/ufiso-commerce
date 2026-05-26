@@ -10,14 +10,15 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
-    "lighthouse": "lhci autorun"
+    "lighthouse": "lhci autorun",
+    "lighthouse:production": "lhci autorun --config=lighthouserc.production.json"
   },
   "dependencies": {
     "@logtail/pino": "^0.5.8",
     "@medusajs/js-sdk": "^2.15.3",
     "@ufiso/shop-config": "workspace:*",
     "klaro": "0.7.21",
-    "next": "15.1.6",
+    "next": "15.5.18",
     "pino": "^9.14.0",
     "react": "19.0.0",
     "react-dom": "19.0.0"

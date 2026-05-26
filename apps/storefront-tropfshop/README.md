@@ -12,7 +12,7 @@ Coming-Soon-Tiles, DOI-Confirm-Page). Verbunden mit Medusa via
 | `pnpm --filter @ufiso/storefront-tropfshop dev`        | Next-Dev-Server (`localhost:3000`)                   |
 | `pnpm --filter @ufiso/storefront-tropfshop build`      | Production-Build                                     |
 | `pnpm --filter @ufiso/storefront-tropfshop start`      | Production-Server (nach Build)                       |
-| `pnpm --filter @ufiso/storefront-tropfshop test:e2e`   | Playwright-E2E (Coming-Soon, a11y, SEO, Newsletter)  |
+| `pnpm --filter @ufiso/storefront-tropfshop test:e2e`   | Playwright-E2E (Coming-Soon, a11y, SEO, Newsletter, Consent) |
 | `pnpm --filter @ufiso/storefront-tropfshop lighthouse` | Lighthouse-CI lokal (build voraus)                   |
 | `pnpm --filter @ufiso/storefront-tropfshop typecheck`  | TypeScript-Check                                     |
 | `pnpm --filter @ufiso/storefront-tropfshop lint`       | ESLint                                               |
@@ -39,6 +39,35 @@ BREVO_DOI_REDIRECT_URL=http://localhost:3000/newsletter-bestaetigt
 Manuelle Verifikations-Strecke siehe Runbook
 [`apps/docs/runbooks/brevo-roundtrip.md`](../docs/runbooks/brevo-roundtrip.md):
 Submit → DOI-Mail → Confirm-Link → Redirect → Brevo-Liste.
+
+## E2E-Build mit TestErrorBridge
+
+`components/test-error-bridge.tsx` exponiert `window.__reportClientError` und
+wird **nur** gemountet, wenn `NEXT_PUBLIC_ENABLE_TEST_BRIDGE === "1"` zum
+Zeitpunkt des Builds gesetzt ist (Sprint 8, ADR-014 Hardening). Production-
+Builds rendern die Bruecke nicht — die Konsequenz: vor `pnpm test:e2e` muss
+der Build mit dem Flag gemacht werden, sonst schlaegt `consent.spec.ts` mit
+"TestErrorBridge fehlt — `__reportClientError` nicht da" fehl.
+
+PowerShell:
+
+```powershell
+$env:NEXT_PUBLIC_ENABLE_TEST_BRIDGE="1"
+pnpm --filter @ufiso/storefront-tropfshop build
+pnpm --filter @ufiso/storefront-tropfshop test:e2e
+```
+
+bash / zsh:
+
+```bash
+NEXT_PUBLIC_ENABLE_TEST_BRIDGE=1 pnpm --filter @ufiso/storefront-tropfshop build
+pnpm --filter @ufiso/storefront-tropfshop test:e2e
+```
+
+CI setzt das Flag im `Storefront-Build`-Step
+(`.github/workflows/ci.yml`). `playwright.config.ts` setzt das Flag
+zusaetzlich in `webServer.env` — wirkt aber nur fuer `next dev`-Pfade, weil
+das App-Router-Layout bei `next start` statisch geprerendert ist.
 
 ## Quality Gates (Sprint 4)
 

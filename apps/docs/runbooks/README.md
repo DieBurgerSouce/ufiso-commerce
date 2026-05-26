@@ -15,3 +15,7 @@ relevanten Kurzfassungen hierher gespiegelt.
 - [`brevo-roundtrip.md`](./brevo-roundtrip.md) — manuelle Brevo-DOI-Test-Sequenz.
 - [`observability.md`](./observability.md) — Logs lesen, BetterStack-Setup,
   PII-Audit, /health-Tests (Sprint 6).
+- [`consent.md`](./consent.md) — Klaro-Consent: Brand hinzufuegen, Service
+  hinzufuegen, Debugging-Pfad, Klaro-Version-Upgrade (Sprint 7).
+- [`vercel-deployment.md`](./vercel-deployment.md) — Vercel-Preview Storefront-
+  Deploy: ENV-Liste, Turborepo-Filter-Build, Custom-Domain-Phase-2 (Sprint 8).

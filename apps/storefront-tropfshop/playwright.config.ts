@@ -31,12 +31,20 @@ export default defineConfig({
     // Direkt `next start` ueber den lokalen Bin — bypasst die pnpm-Vor-
     // Pruefung `verify-deps-before-run`, die bei ignorierten
     // Build-Scripts (z. B. `@parcel/watcher`) den Boot fehlschlagen laesst.
+    //
+    // Achtung: NEXT_PUBLIC_*-ENVs werden bei `next build` in den Client-
+    // Bundle inlined. Damit der TestErrorBridge-Helper im E2E-Run auf
+    // `window.__reportClientError` landet, MUSS `NEXT_PUBLIC_ENABLE_TEST_BRIDGE=1`
+    // bereits zum Build-Zeitpunkt gesetzt sein (siehe CI-Workflow + lokaler
+    // README). Hier gesetzt deckt nur `next start`-Laufzeit ab — der Build
+    // davor traegt die Konstante in den Bundle.
     command: "node node_modules/next/dist/bin/next start",
     url: baseURL,
     timeout: 120_000,
     reuseExistingServer: !process.env.CI,
     env: {
       PORT: String(PORT),
+      NEXT_PUBLIC_ENABLE_TEST_BRIDGE: "1",
     },
   },
 });

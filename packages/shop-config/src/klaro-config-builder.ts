@@ -1,8 +1,12 @@
-import type { ShopKlaroConfig } from "@ufiso/shop-config/klaro-config";
+import type { ShopKlaroConfig } from "./klaro-config";
 
 /**
  * Uebersetzt die brand-agnostische `ShopKlaroConfig` aus `@ufiso/shop-config`
  * in das von Klaro 0.7.x erwartete Format.
+ *
+ * Lebt im `shop-config`-Package (vorher: storefront-tropfshop/lib/), weil
+ * Multi-Brand-Pruefungen (Sprint 8) den Builder gegen mehrere Brand-Datein
+ * laufen lassen muessen, ohne den Storefront-App-Code zu importieren.
  *
  * Vorteile dieser Indirektion:
  *  - Brand-Module bleiben frei von Klaro-Internals (z. B. `version`,
