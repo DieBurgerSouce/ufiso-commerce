@@ -22,3 +22,10 @@ export {
 } from "./orchestrator.js";
 
 export { MockAdapter, seedMock } from "./adapters/in-memory.js";
+
+export {
+  MockXmlRpcClient,
+  OdooXmlRpcAdapter,
+  type OdooXmlRpcConfig,
+  type XmlRpcClient,
+} from "./adapters/odoo-xmlrpc.js";
