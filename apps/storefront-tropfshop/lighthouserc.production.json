@@ -2,8 +2,8 @@
   "ci": {
     "collect": {
       "url": [
-        "https://tropfshop-storefront.vercel.app/",
-        "https://tropfshop-storefront.vercel.app/newsletter-bestaetigt"
+        "https://ufiso-commerce-storefron-git-b717b3-benfirmenich-6363s-projects.vercel.app/",
+        "https://ufiso-commerce-storefron-git-b717b3-benfirmenich-6363s-projects.vercel.app/newsletter-bestaetigt"
       ],
       "numberOfRuns": 3,
       "settings": {
