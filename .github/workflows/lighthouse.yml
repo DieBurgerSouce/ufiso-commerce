@@ -53,5 +53,10 @@ jobs:
         with:
           name: lighthouse-reports
           path: apps/storefront-tropfshop/.lighthouseci/
+          # `.lighthouseci/` ist eine dot-Directory — seit upload-artifact@v4
+          # werden hidden Files per Default ausgeschlossen. Ohne diesen Flag
+          # findet der Upload-Step 0 Files, obwohl lhci 6 Reports nach
+          # `.lighthouseci/reports/` geschrieben hat (Sprint-10 A.5 Folge-Fix).
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
