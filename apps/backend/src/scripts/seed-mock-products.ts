@@ -136,6 +136,123 @@ const MOCK_PRODUCTS: MockProduct[] = [
       "Vierfach-Verteilerblock zum Aufteilen einer Wasserleitung auf bis zu vier unabhaengige Bewaesserungs-Kreise. 3/4-Zoll-Eingang.",
     sku: "SM-TRP-0015",
   },
+  // ─── Sprint-10 B.4: Rivulis-Aries-Familie komplett (16/20 mm × 50/100/250/500 m) ───
+  {
+    title: "Rivulis Aries 16 mm Tropfschlauch, 100 m Rolle",
+    handle: "rivulis-aries-16mm-100m",
+    description:
+      "Druckkompensierender Tropfschlauch fuer mittelgrosse Beete. 100 m Rolle, Tropferabstand 30 cm.",
+    sku: "SM-TRP-0016",
+  },
+  {
+    title: "Rivulis Aries 16 mm Tropfschlauch, 500 m Rolle",
+    handle: "rivulis-aries-16mm-500m",
+    description:
+      "Profi-Rolle fuer Reihenkulturen und groessere Flaechen. 500 m, druckkompensierend, Tropferabstand 30 cm.",
+    sku: "SM-TRP-0017",
+  },
+  {
+    title: "Rivulis Aries 20 mm Tropfschlauch, 50 m Rolle",
+    handle: "rivulis-aries-20mm-50m",
+    description:
+      "Verstaerkter 20-mm-Tropfschlauch fuer hoehere Durchflussmengen. 50 m Rolle, druckkompensierend.",
+    sku: "SM-TRP-0018",
+  },
+  {
+    title: "Rivulis Aries 20 mm Tropfschlauch, 100 m Rolle",
+    handle: "rivulis-aries-20mm-100m",
+    description:
+      "20-mm-Aries-Tropfschlauch fuer mittlere bis grosse Beete. 100 m Rolle, druckkompensierend.",
+    sku: "SM-TRP-0019",
+  },
+  {
+    title: "Rivulis Aries 20 mm Tropfschlauch, 250 m Rolle",
+    handle: "rivulis-aries-20mm-250m",
+    description:
+      "20-mm-Aries-Tropfschlauch fuer Reihenkulturen. 250 m Rolle, druckkompensierend, Tropferabstand 30 cm.",
+    sku: "SM-TRP-0020",
+  },
+  {
+    title: "Rivulis Aries 20 mm Tropfschlauch, 500 m Rolle",
+    handle: "rivulis-aries-20mm-500m",
+    description:
+      "Profi-Rolle 20 mm Aries fuer Gemueseanbau und Landschaftsbau. 500 m Rolle, druckkompensierend.",
+    sku: "SM-TRP-0021",
+  },
+  // ─── Sprint-10 B.4: Senninger-Druckminderer-Familie (0,7 / 1,0 / 1,5 / 2,0 bar) ───
+  {
+    title: "Senninger Druckminderer, 0,7 bar",
+    handle: "senninger-druckminderer-0-7bar",
+    description:
+      "Senninger-Druckregler fuer Niederdruck-Tropfsysteme. Stabiler Ausgangsdruck 0,7 bar — fuer empfindliche Tropfer und Pflanzkulturen.",
+    sku: "SM-TRP-0022",
+  },
+  {
+    title: "Senninger Druckminderer, 1,0 bar",
+    handle: "senninger-druckminderer-1-0bar",
+    description:
+      "Senninger-Druckregler mit konstantem Ausgangsdruck von 1,0 bar. Geeignet fuer Standard-Tropfschlaeuche und Mikro-Tropfer.",
+    sku: "SM-TRP-0023",
+  },
+  {
+    title: "Senninger Druckminderer, 2,0 bar",
+    handle: "senninger-druckminderer-2-0bar",
+    description:
+      "Senninger-Druckregler mit 2,0 bar Ausgangsdruck. Fuer hoehere Durchfluesse und groessere Tropfsysteme.",
+    sku: "SM-TRP-0024",
+  },
+  // ─── Sprint-10 B.4: Magnetventil-Varianten (3/4 ist bereits SM-TRP-0010) ───
+  {
+    title: "Magnetventil 1/2 Zoll, 24 V AC",
+    handle: "magnetventil-1-2-zoll-24v",
+    description:
+      "Kompaktes 24-V-AC-Magnetventil fuer kleine Bewaesserungs-Kreise. 1/2-Zoll-Anschluss, leise und langlebig.",
+    sku: "SM-TRP-0025",
+  },
+  {
+    title: "Magnetventil 1 Zoll, 24 V AC",
+    handle: "magnetventil-1-zoll-24v",
+    description:
+      "Robustes 24-V-AC-Magnetventil mit 1-Zoll-Anschluss fuer hohe Durchflussmengen. Lange Lebensdauer, leise im Betrieb.",
+    sku: "SM-TRP-0026",
+  },
+  // ─── Sprint-10 B.4: 20-mm-Fittings als Pendant zur Aries-20mm-Familie ───
+  {
+    title: "T-Stueck 20 mm",
+    handle: "t-stueck-20mm",
+    description:
+      "Klemmverbinder T-Stueck fuer 20-mm-Schlaeuche. Werkzeuglose Montage, dichtet ohne Dichtmittel.",
+    sku: "SM-TRP-0027",
+  },
+  {
+    title: "Endkappe 20 mm",
+    handle: "endkappe-20mm",
+    description:
+      "Klemmbare Endkappe fuer 20-mm-Tropfschlaeuche. Schliesst Leitungsenden zuverlaessig ab und laesst sich zum Spuelen oeffnen.",
+    sku: "SM-TRP-0028",
+  },
+  // ─── Sprint-10 B.4: Adapter + Zubehoer ───
+  {
+    title: "Reduzier-Verbinder 20 mm auf 16 mm",
+    handle: "reduzier-verbinder-20-auf-16mm",
+    description:
+      "Reduzier-Verbinder zum Anschluss von 16-mm-Verteilern an 20-mm-Hauptleitungen. Werkzeuglose Klemmmontage.",
+    sku: "SM-TRP-0029",
+  },
+  {
+    title: "Tropfer-Pfeil 2 L/h, 50 Stueck",
+    handle: "tropfer-pfeil-2lh-50stk",
+    description:
+      "Stechtropfer mit 2 L/h Durchfluss zum direkten Einstechen in Topf- oder Beeterde. 50er-Set, druckkompensierend.",
+    sku: "SM-TRP-0030",
+  },
+  {
+    title: "PE-Anschlussverschraubung 1/2 Zoll auf 16 mm",
+    handle: "pe-anschlussverschraubung-1-2-auf-16mm",
+    description:
+      "Verschraubung zum Anschluss von 16-mm-Tropfschlauch an Standard-1/2-Zoll-Wasserleitungen. Inklusive Dichtung.",
+    sku: "SM-TRP-0031",
+  },
 ];
 
 export default async function seedMockProducts({ container }: ExecArgs) {
