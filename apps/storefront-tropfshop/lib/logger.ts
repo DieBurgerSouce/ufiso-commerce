@@ -60,6 +60,7 @@ function detectLogLevel(): string {
 
 function buildLogger(): Logger {
   const isDev = process.env.NODE_ENV !== "production";
+  const isVercel = !!process.env.VERCEL;
   const level = detectLogLevel();
   const betterstackToken = process.env.LOGTAIL_SOURCE_TOKEN?.trim();
 
@@ -94,13 +95,22 @@ function buildLogger(): Logger {
     options: { destination: 1 },
   };
 
-  const betterstackTarget: TransportTargetOptions | null = betterstackToken
-    ? {
-        target: "@logtail/pino",
-        level,
-        options: { sourceToken: betterstackToken },
-      }
-    : null;
+  // `@logtail/pino` ueber `pino.transport`-Worker laeuft auf Vercel NICHT —
+  // der Worker-Thread resolved den Target-String aus seinem eigenen Kontext,
+  // unabhaengig vom Lambda-Bundle. `serverExternalPackages` +
+  // `outputFileTracingIncludes` reichen nicht. Stattdessen: auf Vercel
+  // stdout-JSON ausgeben und Vercel-Log-Drain -> BetterStack als Transport
+  // nutzen (Phase-1-Bruecke, dokumentiert in ADR-013-Update Sprint 9).
+  // Lokal/Hetzner-Coolify bleibt der direkte Pino-Transport-Pfad aktiv.
+  const useBetterstackTransport = !!betterstackToken && !isVercel;
+  const betterstackTarget: TransportTargetOptions | null =
+    useBetterstackTransport
+      ? {
+          target: "@logtail/pino",
+          level,
+          options: { sourceToken: betterstackToken },
+        }
+      : null;
 
   const targets: TransportTargetOptions[] = [];
   targets.push(isDev ? prettyTarget : stdoutJsonTarget);
