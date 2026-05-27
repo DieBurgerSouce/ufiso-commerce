@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
+    "test:e2e:staging": "playwright test --config=playwright.staging.config.ts",
     "lighthouse": "lhci autorun",
     "lighthouse:production": "lhci autorun --config=lighthouserc.production.json"
   },

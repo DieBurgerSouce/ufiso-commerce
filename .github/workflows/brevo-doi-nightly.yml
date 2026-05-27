@@ -1,0 +1,93 @@
+name: Brevo DOI Nightly (Staging)
+
+# Sprint 11/B.2 — nightly Smoke gegen die Vercel-Preview-Storefront.
+#
+# Die Spec liegt schon laenger im Repo (Sprint 10 B.5,
+# apps/storefront-tropfshop/e2e/staging/brevo-doi-submit.spec.ts), war aber
+# nur lokal per Hand zu starten. Hier laeuft sie automatisch:
+#
+#   - cron 03:00 UTC (05:00 CEST / 04:00 CET)
+#   - workflow_dispatch fuer Ad-hoc-Runs
+#   - env-gated: ohne BREVO_E2E_API_KEY-Secret rennt der Job in einen
+#     fruehen Skip-Hinweis, kein roter Build
+#   - Cleanup-After ist Teil der Spec selbst (finally-Block DELETE)
+#
+# Vault-Begleitung:
+#   - apps/docs/runbooks/brevo-roundtrip.md
+#   - ADR-013-Error-Tracking (Token-Hygiene)
+#   - PRE-COMMIT-CHECKLIST.md (Vault) - keine Secrets in Vault!
+
+on:
+  schedule:
+    # 03:00 UTC = 05:00 Europe/Berlin im Sommer, 04:00 im Winter
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Override BREVO_E2E_BASE_URL (sonst Repo-Variable)"
+        required: false
+        type: string
+
+concurrency:
+  group: brevo-doi-nightly
+  cancel-in-progress: false
+
+jobs:
+  staging-e2e:
+    name: Brevo DOI Submit (Vercel-Preview)
+    runs-on: ubuntu-latest
+    # Lockerer Timeout - die Spec selbst polled bis zu 5s gegen Brevo, wir
+    # geben dem Job 10 min fuer Worst-Case-Netzwerk + Cleanup.
+    timeout-minutes: 10
+    steps:
+      - name: Vorab-Check Secret
+        id: gate
+        run: |
+          if [ -z "${{ secrets.BREVO_E2E_API_KEY }}" ]; then
+            echo "::warning::BREVO_E2E_API_KEY-Secret fehlt — Nightly skipped."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.enabled == 'true'
+
+      - name: Setup pnpm
+        if: steps.gate.outputs.enabled == 'true'
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        if: steps.gate.outputs.enabled == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        if: steps.gate.outputs.enabled == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Playwright-Browser installieren (chromium)
+        if: steps.gate.outputs.enabled == 'true'
+        run: pnpm --filter @ufiso/storefront-tropfshop exec playwright install --with-deps chromium
+
+      - name: Brevo-DOI-Staging-E2E ausfuehren
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          BREVO_E2E_ENABLED: "1"
+          BREVO_E2E_API_KEY: ${{ secrets.BREVO_E2E_API_KEY }}
+          BREVO_E2E_BASE_URL: ${{ inputs.base_url || vars.BREVO_E2E_BASE_URL }}
+          BREVO_E2E_LIST_ID: ${{ vars.BREVO_E2E_LIST_ID || '3' }}
+          # Datum + Run-ID im Prefix machen den Cleanup-Pfad nachvollziehbar,
+          # falls eine Run-Ausnahme den finally-DELETE verpasst.
+          BREVO_E2E_EMAIL_PREFIX: "ben.firmenich+nightly-${{ github.run_id }}"
+        run: pnpm --filter @ufiso/storefront-tropfshop test:e2e:staging
+
+      - name: Playwright-Report hochladen
+        if: ${{ steps.gate.outputs.enabled == 'true' && !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: brevo-doi-nightly-report
+          path: apps/storefront-tropfshop/playwright-report/
+          retention-days: 14
