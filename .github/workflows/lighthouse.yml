@@ -16,8 +16,24 @@ env:
 
 jobs:
   lighthouse:
-    name: Lighthouse CI (Storefront)
+    name: Lighthouse CI (${{ matrix.shop }})
     runs-on: ubuntu-latest
+
+    strategy:
+      # Sprint 11 C.4 — beide Storefronts gegen die gleichen Schwellen
+      # (perf 0.9 / a11y 0.95 / bp 0.95 / seo 0.95). fail-fast: false damit
+      # ein Shop-Fail nicht den anderen abbricht.
+      fail-fast: false
+      matrix:
+        shop:
+          - tropfshop
+          - hofladen
+        include:
+          - shop: tropfshop
+            workspace: "@ufiso/storefront-tropfshop"
+          - shop: hofladen
+            workspace: "@ufiso/storefront-hofladen"
+
     steps:
       - uses: actions/checkout@v4
 
@@ -33,30 +49,28 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build storefront
-        run: pnpm --filter @ufiso/storefront-tropfshop build
+      - name: Build storefront (${{ matrix.shop }})
+        run: pnpm --filter ${{ matrix.workspace }} build
 
-      - name: Run Lighthouse CI
+      - name: Run Lighthouse CI (${{ matrix.shop }})
         # `working-directory` setzt das CWD explizit auf die Storefront-App.
         # Sonst legt lhci die `.lighthouseci/`-Reports relativ zum Filter-
-        # Process an (Sprint-5-Artifact-Bug: Sprint 8 D4) — der Upload-Step
+        # Process an (Sprint-5-Artifact-Bug, Sprint 8 D4) — der Upload-Step
         # findet den Folder dann nicht. lhci autorun startet `next start`
         # selbst (siehe lighthouserc.json), rennt 3 Audits pro URL und
         # assertet die Schwellen aus dem Config-File.
         # Backend ist NICHT erforderlich — Storefront degraded graceful.
-        working-directory: apps/storefront-tropfshop
+        working-directory: apps/storefront-${{ matrix.shop }}
         run: pnpm lighthouse
 
-      - name: Upload Lighthouse reports
+      - name: Upload Lighthouse reports (${{ matrix.shop }})
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: lighthouse-reports
-          path: apps/storefront-tropfshop/.lighthouseci/
+          name: lighthouse-reports-${{ matrix.shop }}
+          path: apps/storefront-${{ matrix.shop }}/.lighthouseci/
           # `.lighthouseci/` ist eine dot-Directory — seit upload-artifact@v4
-          # werden hidden Files per Default ausgeschlossen. Ohne diesen Flag
-          # findet der Upload-Step 0 Files, obwohl lhci 6 Reports nach
-          # `.lighthouseci/reports/` geschrieben hat (Sprint-10 A.5 Folge-Fix).
+          # werden hidden Files per Default ausgeschlossen (Sprint-10 A.5).
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7

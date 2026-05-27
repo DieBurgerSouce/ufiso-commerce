@@ -44,13 +44,29 @@ jobs:
         run: pnpm build
 
   e2e-with-backend:
-    name: E2E (Storefront + Medusa)
+    name: E2E (${{ matrix.shop }} + Medusa)
     runs-on: ubuntu-latest
 
-    # Postgres + Redis als Services-Container. Health-Checks stellen sicher, dass
-    # die Backend-Migrations erst starten, wenn die DB wirklich bereit ist.
-    # Lokal laufen die Container ueber docker-compose.yml auf Ports 15432/16379;
-    # in CI exponieren wir die Default-Ports 5432/6379 (siehe DATABASE_URL unten).
+    strategy:
+      # Sprint 11 C.4 — Matrix fuer beide Storefronts. `fail-fast: false`
+      # damit ein einzelnes Shop-Fail nicht das andere abbricht; CI-Signal
+      # bleibt pro Shop einzeln lesbar.
+      fail-fast: false
+      matrix:
+        shop:
+          - tropfshop
+          - hofladen
+        include:
+          - shop: tropfshop
+            workspace: "@ufiso/storefront-tropfshop"
+            seed_key_path: ".publishableKey"
+            port: 3000
+          - shop: hofladen
+            workspace: "@ufiso/storefront-hofladen"
+            seed_key_path: ".shops.hofladen.publishableKey"
+            port: 3001
+
+    # Postgres + Redis als Services-Container (Sprint 5).
     services:
       postgres:
         image: postgres:15-alpine
@@ -76,25 +92,16 @@ jobs:
           --health-retries 20
 
     env:
-      # Runtime-ENVs fuer das Backend (medusa-config.ts liest DATABASE_URL).
       DATABASE_URL: postgres://medusa:medusa@localhost:5432/medusa
       REDIS_URL: redis://localhost:6379
-      STORE_CORS: http://localhost:3000
+      STORE_CORS: http://localhost:3000,http://localhost:3001
       ADMIN_CORS: http://localhost:9000
-      AUTH_CORS: http://localhost:3000,http://localhost:9000
+      AUTH_CORS: http://localhost:3000,http://localhost:3001,http://localhost:9000
       JWT_SECRET: ci-test-only
       COOKIE_SECRET: ci-test-only
       NODE_ENV: production
-      # Admin-SPA wird in CI nicht serviert — die E2E-Tests gehen ausschliesslich
-      # gegen die Store-API. medusa-config.ts liest das ENV.
       MEDUSA_DISABLE_ADMIN: "true"
-      # Storefront-Build greift hier auf das laufende Backend zu. Der
-      # NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY wird im Step "Foundation-Seed"
-      # via $GITHUB_ENV nachgereicht (deterministisch aus .seed-output.json).
       NEXT_PUBLIC_MEDUSA_BACKEND_URL: http://localhost:9000
-      # Pino-Backend-Logger (Sprint 6, ADR-012). `info` = deterministisch, kein
-      # debug-Spam in den GitHub-Actions-Logs. LOGTAIL_SOURCE_TOKEN bleibt leer
-      # in CI — kein Transport zu BetterStack waehrend Tests.
       LOG_LEVEL: info
 
     steps:
@@ -118,17 +125,17 @@ jobs:
       - name: Backend DB migrate
         run: pnpm --filter @ufiso/backend db:migrate
 
-      - name: Foundation-Seed (schreibt .seed-output.json)
+      - name: Foundation-Seed (schreibt .seed-output.json mit shops.*)
         run: pnpm --filter @ufiso/backend seed
 
-      - name: Mock-Produkte seeden
+      - name: Mock-Produkte seeden (Tropfshop + Hofladen)
         run: pnpm --filter @ufiso/backend seed:products
 
-      - name: Publishable Key in $GITHUB_ENV exportieren
+      - name: Publishable Key in $GITHUB_ENV exportieren (${{ matrix.shop }})
         run: |
-          KEY=$(jq -r .publishableKey apps/backend/.seed-output.json)
+          KEY=$(jq -r '${{ matrix.seed_key_path }}' apps/backend/.seed-output.json)
           if [ -z "$KEY" ] || [ "$KEY" = "null" ]; then
-            echo "::error::Publishable Key fehlt in apps/backend/.seed-output.json"
+            echo "::error::Publishable Key fuer ${{ matrix.shop }} (Pfad ${{ matrix.seed_key_path }}) fehlt"
             cat apps/backend/.seed-output.json || true
             exit 1
           fi
@@ -155,21 +162,20 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Storefront-Build mit echtem Backend
-        # NEXT_PUBLIC_ENABLE_TEST_BRIDGE mountet `<TestErrorBridge />` in
-        # `app/layout.tsx` (siehe Sprint-8-Hardening + ADR-014). Ohne das
-        # Flag fehlt `window.__reportClientError`, und `consent.spec.ts`
-        # schlaegt fehl. Production-Builds (Vercel-Preview, spaeter Prod)
-        # bekommen das Flag absichtlich NICHT.
+      - name: Storefront-Build mit echtem Backend (${{ matrix.shop }})
         env:
+          # TestErrorBridge nur im CI-Build aktiv. Production-Builds (Vercel
+          # Preview, spaeter Prod) bekommen das Flag NICHT, siehe ADR-014.
           NEXT_PUBLIC_ENABLE_TEST_BRIDGE: "1"
-        run: pnpm --filter @ufiso/storefront-tropfshop build
+        run: pnpm --filter ${{ matrix.workspace }} build
 
       - name: Playwright-Browser installieren
-        run: pnpm --filter @ufiso/storefront-tropfshop exec playwright install --with-deps chromium
+        run: pnpm --filter ${{ matrix.workspace }} exec playwright install --with-deps chromium
 
-      - name: Storefront E2E-Tests gegen laufendes Backend
-        run: pnpm --filter @ufiso/storefront-tropfshop test:e2e
+      - name: Storefront E2E-Tests gegen laufendes Backend (${{ matrix.shop }})
+        env:
+          PORT: ${{ matrix.port }}
+        run: pnpm --filter ${{ matrix.workspace }} test:e2e
 
       - name: Backend stoppen
         if: always()
@@ -182,15 +188,15 @@ jobs:
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: apps/storefront-tropfshop/playwright-report/
+          name: playwright-report-${{ matrix.shop }}
+          path: apps/storefront-${{ matrix.shop }}/playwright-report/
           retention-days: 7
 
       - name: Backend-Logs als Artifact hochladen
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: backend-log
+          name: backend-log-${{ matrix.shop }}
           path: /tmp/ufiso-ci/backend.log
           retention-days: 7
 
