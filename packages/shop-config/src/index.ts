@@ -16,4 +16,9 @@ export {
   tropfshopLegal,
   tropfshopKlaroConfig,
 } from "./tropfshop/index";
+export {
+  hofladenBrand,
+  hofladenLegal,
+  hofladenKlaroConfig,
+} from "./hofladen/index";
 export { demoshopKlaroConfig } from "./demoshop/index";

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildKlaroConfig } from "../klaro-config-builder";
 import { tropfshopKlaroConfig } from "../tropfshop/klaro";
+import { hofladenKlaroConfig } from "../hofladen/klaro";
 import { demoshopKlaroConfig } from "../demoshop/klaro";
 
 /**
@@ -24,19 +25,37 @@ describe("buildKlaroConfig — Multi-Brand", () => {
     expect(native.cookieName).toBe("klaro-tropfshop");
   });
 
+  it("baut die Hofladen-Config ohne Fehler und behaelt den Brand-Cookie-Namen", () => {
+    const native = buildKlaroConfig(hofladenKlaroConfig);
+    expect(native.cookieName).toBe("klaro-hofladen");
+  });
+
   it("baut die Demoshop-Mock-Config ohne Fehler und behaelt den Brand-Cookie-Namen", () => {
     const native = buildKlaroConfig(demoshopKlaroConfig);
     expect(native.cookieName).toBe("klaro-demoshop");
   });
 
   it("Cookie-Namen sind shop-eindeutig (keine Kollision auf shared domain)", () => {
-    expect(tropfshopKlaroConfig.cookieName).not.toBe(
+    const names = [
+      tropfshopKlaroConfig.cookieName,
+      hofladenKlaroConfig.cookieName,
       demoshopKlaroConfig.cookieName,
-    );
+    ];
+    // Set-Vergleich: jede Brand bringt einen eigenen Namen mit, kein Dup.
+    expect(new Set(names).size).toBe(names.length);
   });
 
   it("Tropfshop-Native: 2 Services (betterstack-telemetry + brevo-doi)", () => {
     const native = buildKlaroConfig(tropfshopKlaroConfig);
+    expect(native.services).toHaveLength(2);
+    expect(native.services.map((s) => s.name).sort()).toEqual([
+      "betterstack-telemetry",
+      "brevo-doi",
+    ]);
+  });
+
+  it("Hofladen-Native: 2 Services (betterstack-telemetry + brevo-doi, analog Tropfshop)", () => {
+    const native = buildKlaroConfig(hofladenKlaroConfig);
     expect(native.services).toHaveLength(2);
     expect(native.services.map((s) => s.name).sort()).toEqual([
       "betterstack-telemetry",
@@ -53,7 +72,11 @@ describe("buildKlaroConfig — Multi-Brand", () => {
   });
 
   it("Default-Policy: alle Services Opt-in (default=false)", () => {
-    for (const cfg of [tropfshopKlaroConfig, demoshopKlaroConfig]) {
+    for (const cfg of [
+      tropfshopKlaroConfig,
+      hofladenKlaroConfig,
+      demoshopKlaroConfig,
+    ]) {
       const native = buildKlaroConfig(cfg);
       for (const service of native.services) {
         expect(service.default).toBe(false);
