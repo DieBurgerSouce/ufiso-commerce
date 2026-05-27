@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Brand-Tokens Hofladen — 1-CSS-Var-Wechsel gegen Tropfshop (Sprint 11 C.3
+ * FUNKTIONALER Stresstest, KEIN visuelles Polishing). Erdbraun statt
+ * Wasserblau. Finale Brand-Palette ist Sprint 12.
+ */
+:root {
+  --color-primary: 146 64 14; /* Erdbraun (TBD) */
+  --color-accent: 161 98 7; /* Honig/Ocker (TBD) */
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/*
+ * Klaro-Theme-Override (BFSG / WCAG 2.1 AA) — identisch zur Tropfshop-
+ * Variante. Klaro-Default verfehlt das 4.5:1-Kontrast-Ziel; wir setzen
+ * Erfolg-, Link- und Info-Button-Farben so, dass axe-core sauber bleibt.
+ */
+.klaro {
+  --green1: #0f6b4f;
+  --green2: #138a64;
+  --light1: #ffffff;
+  --light2: #d6d6d6;
+  --dark1: #1c1917;
+  --dark2: #3f3f3f;
+  --button-text-color: #ffffff;
+}
+
+.klaro .cookie-modal a,
+.klaro .cookie-notice a,
+.klaro .context-notice a {
+  color: #ffffff !important;
+  text-decoration: underline !important;
+}
+
+.klaro .cm-btn.cm-btn-success,
+.klaro .cm-btn.cm-btn-success-var {
+  background-color: var(--green1) !important;
+  color: #ffffff !important;
+}
+
+.klaro .cm-btn.cm-btn-info,
+.klaro .cm-btn.cm-btn-learn-more,
+.klaro .cm-btn.cm-btn-lern-more {
+  background-color: #1d4ed8 !important;
+  color: #ffffff !important;
+}
+
+.klaro .cm-btn {
+  outline-offset: 2px;
+}
+
+.klaro .cm-btn:focus-visible {
+  outline: 2px solid #ffffff;
+}

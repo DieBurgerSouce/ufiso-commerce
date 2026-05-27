@@ -5,7 +5,8 @@
   "description": "Geteilte Tailwind-Tokens fuer UFISO-Storefronts. Multi-Brand via Preset pro Shop.",
   "type": "module",
   "exports": {
-    "./tropfshop": "./tropfshop.ts"
+    "./tropfshop": "./tropfshop.ts",
+    "./hofladen": "./hofladen.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

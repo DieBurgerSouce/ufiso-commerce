@@ -1,0 +1,43 @@
+{
+  "name": "@ufiso/storefront-hofladen",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Hofladen Storefront (Next.js 15) — Phase 1: Pre-Launch-Page mit Newsletter-Capture (Sprint 11 FUNKTIONALER Stresstest).",
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start --port 3001",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "lighthouse": "lhci autorun"
+  },
+  "dependencies": {
+    "@logtail/pino": "^0.5.8",
+    "@medusajs/js-sdk": "^2.15.3",
+    "@ufiso/shop-config": "workspace:*",
+    "klaro": "0.7.21",
+    "lru-cache": "^11.5.0",
+    "next": "15.5.18",
+    "pino": "^9.14.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.1",
+    "@lhci/cli": "^0.14.0",
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.4",
+    "@types/react-dom": "^19.0.2",
+    "@ufiso/eslint-config": "workspace:*",
+    "@ufiso/tailwind-config": "workspace:*",
+    "@ufiso/tsconfig": "workspace:*",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.17.0",
+    "pino-pretty": "^11.3.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
+  }
+}
