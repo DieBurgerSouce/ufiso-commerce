@@ -63,6 +63,17 @@ const SHIPPING_OPTION_NAME = "Standardversand";
 const API_KEY_TITLE = "Tropfshop Storefront";
 const FULFILLMENT_PROVIDER_ID = "manual_manual";
 
+// ── Hofladen (Sprint 11 C.2, FUNKTIONALER Multi-Shop-Stresstest) ──────────
+// Vault-Mantra Sprint 11: zweiter Brand beweist die Architektur funktional;
+// KEIN visuelles Polishing, KEINE realen Lieferantennamen. Hofladen-Lager
+// ist ein Mock-Standort, dient nur dazu, dass Channel ↔ Location ↔ API-Key
+// fuer einen zweiten Shop existiert. Fulfillment-Set wird mit dem Tropfshop
+// geteilt (DACH-Zone deckt beide Shops) — bewusst minimal, kein eigenes
+// Versand-Setup pro Brand fuer Phase 1.
+const HOFLADEN_CHANNEL_NAME = "hofladen";
+const HOFLADEN_STOCK_LOCATION_NAME = "Hofladen-Lager";
+const HOFLADEN_API_KEY_TITLE = "Hofladen Storefront";
+
 const updateStoreCurrencies = createWorkflow(
   "update-store-currencies",
   (input: { store_id: string }) => {
@@ -418,9 +429,157 @@ export default async function seedFoundation({ container }: ExecArgs) {
     skip("link:api_key↔sales_channel", apiKey.id);
   }
 
+  // ── Hofladen-Channel + Stock-Location + API-Key (Sprint 11 C.2) ──────────
+  // Sales Channel `hofladen` analog zu `tropfshop`. Sortiment-/Sourcing-
+  // Entscheidung ist Vater-blockiert — der Seed legt nur die Infrastruktur
+  // an, damit eine zweite Storefront-App den Channel adressieren kann.
+
+  let [hofladenChannel] = await salesChannelModuleService.listSalesChannels({
+    name: HOFLADEN_CHANNEL_NAME,
+  });
+  if (hofladenChannel) {
+    skip("sales_channel", hofladenChannel.id);
+  } else {
+    const { result } = await createSalesChannelsWorkflow(container).run({
+      input: {
+        salesChannelsData: [
+          {
+            name: HOFLADEN_CHANNEL_NAME,
+            description:
+              "Hofladen DACH — Mock-Sortiment Sprint 11, Sourcing Vater-blockiert.",
+          },
+        ],
+      },
+    });
+    hofladenChannel = result[0];
+    created("sales_channel", hofladenChannel.id);
+  }
+
+  // Stock Location "Hofladen-Lager" (mock — eigener Standort fuer
+  // saubere Multi-Shop-Trennung, real wird das beim Vater-Termin
+  // entschieden).
+  let [hofladenStockLocation] =
+    await stockLocationModuleService.listStockLocations({
+      name: HOFLADEN_STOCK_LOCATION_NAME,
+    });
+  if (hofladenStockLocation) {
+    skip("stock_location", hofladenStockLocation.id);
+  } else {
+    const { result: createdLocations } = await createStockLocationsWorkflow(
+      container,
+    ).run({
+      input: {
+        locations: [
+          {
+            name: HOFLADEN_STOCK_LOCATION_NAME,
+            address: { city: "Solingen", country_code: "DE", address_1: "" },
+          },
+        ],
+      },
+    });
+    hofladenStockLocation = createdLocations[0];
+    created("stock_location", hofladenStockLocation.id);
+  }
+
+  // Link: Hofladen-Lager ↔ Fulfillment-Provider (`manual_manual`,
+  // analog zu Tropfshop — kein eigener Provider in Phase 1).
+  const existingHofProviderLinks = await link.list({
+    [Modules.STOCK_LOCATION]: { stock_location_id: hofladenStockLocation.id },
+    [Modules.FULFILLMENT]: { fulfillment_provider_id: FULFILLMENT_PROVIDER_ID },
+  });
+  if (existingHofProviderLinks.length === 0) {
+    await link.create({
+      [Modules.STOCK_LOCATION]: { stock_location_id: hofladenStockLocation.id },
+      [Modules.FULFILLMENT]: {
+        fulfillment_provider_id: FULFILLMENT_PROVIDER_ID,
+      },
+    });
+    created(
+      "link:hofladen_stock_location↔fulfillment_provider",
+      FULFILLMENT_PROVIDER_ID,
+    );
+  } else {
+    skip(
+      "link:hofladen_stock_location↔fulfillment_provider",
+      FULFILLMENT_PROVIDER_ID,
+    );
+  }
+
+  // Bewusst KEIN eigener Fulfillment-Set-Link fuer Hofladen-Lager in
+  // Phase 1: der Medusa-Link-Layer setzt 1:1 zwischen einem Stock Location
+  // und einem Fulfillment Set durch ("Cannot create multiple links between
+  // 'stock_location' and 'fulfillment'", auch wenn die Postgres-Tabelle
+  // selbst Multi-Location-fuer-ein-Set zuliesse). Phase 1 zeigt nur
+  // Coming-Soon-Tiles — Cart/Checkout/Shipping kommt erst nach Vater-
+  // Termin + Hetzner-Setup. Sobald Hofladen ein eigenes Sortiment +
+  // eigene Versandlogik braucht, bekommt das Hofladen-Lager ein eigenes
+  // Fulfillment-Set (z. B. "Versand Hofladen") mit Service-Zone-Subset.
+
+  // Link: Hofladen Sales Channel ↔ Hofladen-Lager.
+  const existingHofChannelLocLinks = await link.list({
+    [Modules.SALES_CHANNEL]: { sales_channel_id: hofladenChannel.id },
+    [Modules.STOCK_LOCATION]: { stock_location_id: hofladenStockLocation.id },
+  });
+  if (existingHofChannelLocLinks.length === 0) {
+    await linkSalesChannelsToStockLocationWorkflow(container).run({
+      input: { id: hofladenStockLocation.id, add: [hofladenChannel.id] },
+    });
+    created(
+      "link:hofladen_sales_channel↔stock_location",
+      hofladenChannel.id,
+    );
+  } else {
+    skip("link:hofladen_sales_channel↔stock_location", hofladenChannel.id);
+  }
+
+  // Publishable API Key fuer das Hofladen-Storefront, eigene Identitaet
+  // analog zur Tropfshop-Key.
+  let [hofladenApiKey] = await apiKeyModuleService.listApiKeys({
+    title: HOFLADEN_API_KEY_TITLE,
+    type: "publishable",
+  });
+  if (hofladenApiKey) {
+    skip("api_key", hofladenApiKey.id);
+  } else {
+    const {
+      result: [createdKey],
+    } = await createApiKeysWorkflow(container).run({
+      input: {
+        api_keys: [
+          {
+            title: HOFLADEN_API_KEY_TITLE,
+            type: "publishable",
+            created_by: "",
+          },
+        ],
+      },
+    });
+    hofladenApiKey = createdKey;
+    created("api_key", hofladenApiKey.id);
+  }
+
+  // Link: Hofladen API Key ↔ Hofladen Sales Channel.
+  const existingHofKeyLinks = await link.list({
+    [Modules.API_KEY]: { publishable_key_id: hofladenApiKey.id },
+    [Modules.SALES_CHANNEL]: { sales_channel_id: hofladenChannel.id },
+  });
+  if (existingHofKeyLinks.length === 0) {
+    await linkSalesChannelsToApiKeyWorkflow(container).run({
+      input: { id: hofladenApiKey.id, add: [hofladenChannel.id] },
+    });
+    created("link:hofladen_api_key↔sales_channel", hofladenApiKey.id);
+  } else {
+    skip("link:hofladen_api_key↔sales_channel", hofladenApiKey.id);
+  }
+
   // .seed-output.json — CI liest hier den Publishable Key und exportiert ihn
   // als NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY fuer den Storefront-Build.
   // Lokal wird die Datei mitgeschrieben, ist aber gitignored (apps/backend/.gitignore).
+  //
+  // Sprint 11 C.2: zusaetzlich `shops`-Block mit beiden Storefronts. Die
+  // Top-Level-Felder (publishableKey/salesChannelId) bleiben fuer
+  // Backward-Compat als Tropfshop-Alias erhalten — der CI-Step
+  // "Publishable Key in $GITHUB_ENV exportieren" liest sie unveraendert.
   const outputPath = resolve(process.cwd(), ".seed-output.json");
   try {
     writeFileSync(
@@ -429,6 +588,18 @@ export default async function seedFoundation({ container }: ExecArgs) {
         {
           publishableKey: apiKey.token,
           salesChannelId: tropfshopChannel.id,
+          shops: {
+            tropfshop: {
+              publishableKey: apiKey.token,
+              salesChannelId: tropfshopChannel.id,
+              stockLocationId: stockLocation.id,
+            },
+            hofladen: {
+              publishableKey: hofladenApiKey.token,
+              salesChannelId: hofladenChannel.id,
+              stockLocationId: hofladenStockLocation.id,
+            },
+          },
           generatedAt: new Date().toISOString(),
         },
         null,
