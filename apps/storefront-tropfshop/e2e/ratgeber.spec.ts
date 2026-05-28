@@ -1,9 +1,19 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 /**
  * Ratgeber-Tests (Sprint 12). Voll statisch (lib/ratgeber.ts) — unabhaengig
  * vom Backend, laufen in jedem E2E-Setup.
  */
+
+/**
+ * Klaro-Consent-Banner (Sprint 7) legt sich beim Erstbesuch als Overlay ueber
+ * die Seite und faengt Klicks ab — vor Navigation per Klick wegklicken.
+ */
+async function dismissConsent(page: Page) {
+  const accept = page.getByRole("button", { name: /Alle akzeptieren/i });
+  await accept.click({ timeout: 10_000 });
+  await expect(accept).toBeHidden({ timeout: 5_000 });
+}
 
 test.describe("Ratgeber · Uebersicht", () => {
   test("listet die Artikel mit Titel + Lesezeit", async ({ page }) => {
@@ -37,6 +47,7 @@ test.describe("Ratgeber · Artikel", () => {
 
   test("verlinkt auf passende Produkt-Kategorien", async ({ page }) => {
     await page.goto(articlePath);
+    await dismissConsent(page);
     const categoryLink = page
       .locator('a[href^="/produkte/kategorie/"]')
       .first();
