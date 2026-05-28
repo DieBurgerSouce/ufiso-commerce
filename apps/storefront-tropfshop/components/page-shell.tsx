@@ -40,7 +40,7 @@ function SiteFooter() {
   const year = new Date().getFullYear();
   return (
     <footer className="relative mt-auto border-t border-white/10 px-6 py-6">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 text-xs text-neutral-500">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 text-xs text-neutral-400">
         <nav aria-label="Rechtliches" className="flex flex-wrap gap-x-5 gap-y-2">
           <Link
             className="underline underline-offset-2 hover:text-neutral-300"
