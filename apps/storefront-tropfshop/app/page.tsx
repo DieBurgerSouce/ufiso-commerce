@@ -44,6 +44,21 @@ export default async function ComingSoonPage() {
           <NewsletterForm />
         </div>
 
+        <p className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+          <Link
+            href="/produkte"
+            className="font-medium text-accent underline underline-offset-4 hover:text-accent/80"
+          >
+            Sortiment ansehen
+          </Link>
+          <Link
+            href="/ratgeber"
+            className="font-medium text-accent underline underline-offset-4 hover:text-accent/80"
+          >
+            Ratgeber lesen
+          </Link>
+        </p>
+
         <ul className="mt-12 flex flex-wrap gap-x-8 gap-y-3 text-sm text-neutral-400">
           <li>Versand aus Solingen</li>
           <li>Beratung von Gärtnern für Gärtner</li>

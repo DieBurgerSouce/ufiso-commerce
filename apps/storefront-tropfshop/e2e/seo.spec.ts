@@ -33,6 +33,58 @@ test.describe("SEO · sitemap.xml", () => {
     expect(body).toMatch(/<loc>https:\/\/tropfshop\.de\/?<\/loc>/);
     expect(body).toContain("/newsletter-bestaetigt");
   });
+
+  test("enthaelt die indexierbaren Ratgeber-URLs (Sprint 12)", async ({
+    request,
+  }) => {
+    const response = await request.get("/sitemap.xml");
+    const body = await response.text();
+    expect(body).toContain("/ratgeber");
+    expect(body).toContain("/ratgeber/tropfbewaesserung-hochbeet-planen");
+  });
+});
+
+test.describe("SEO · robots.txt Ratgeber-Freigabe (Sprint 12)", () => {
+  test("erlaubt /ratgeber trotz globalem Disallow", async ({ request }) => {
+    const response = await request.get("/robots.txt");
+    const body = await response.text();
+    // Global bleibt disallowed ...
+    expect(body).toMatch(/^Disallow:\s*\//im);
+    // ... aber der Ratgeber ist explizit freigegeben.
+    expect(body).toMatch(/^Allow:\s*\/ratgeber/im);
+  });
+});
+
+test.describe("SEO · Ratgeber-Artikel ist indexierbar + Article-JSON-LD", () => {
+  const articlePath = "/ratgeber/tropfbewaesserung-hochbeet-planen";
+
+  test("setzt robots auf indexierbar (kein noindex)", async ({ page }) => {
+    await page.goto(articlePath);
+    const robots = await page
+      .locator('head meta[name="robots"]')
+      .first()
+      .getAttribute("content");
+    expect(robots, "robots-Meta sollte gesetzt sein").toBeTruthy();
+    expect(robots).not.toMatch(/noindex/i);
+    expect(robots).toMatch(/index/i);
+  });
+
+  test("rendert Article-JSON-LD", async ({ page }) => {
+    await page.goto(articlePath);
+    const scripts = await page
+      .locator('script[type="application/ld+json"]')
+      .allTextContents();
+
+    const types = scripts.map((raw) => {
+      try {
+        return (JSON.parse(raw) as { "@type"?: string })["@type"];
+      } catch {
+        return undefined;
+      }
+    });
+    expect(types).toContain("Article");
+    expect(types).toContain("FAQPage");
+  });
 });
 
 test.describe("SEO · OpenGraph-Meta", () => {
