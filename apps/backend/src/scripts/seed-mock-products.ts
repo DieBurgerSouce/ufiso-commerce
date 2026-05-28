@@ -1,6 +1,10 @@
 import { ExecArgs } from "@medusajs/framework/types";
 import { Modules } from "@medusajs/framework/utils";
-import { createProductsWorkflow } from "@medusajs/medusa/core-flows";
+import {
+  createProductCategoriesWorkflow,
+  createProductsWorkflow,
+  updateProductsWorkflow,
+} from "@medusajs/medusa/core-flows";
 import { createComponentLogger } from "../lib/logger";
 
 /**
@@ -32,6 +36,108 @@ type MockProduct = {
 
 /** Sprint 11 C.2 — Multi-Shop. Channel-Slug entspricht Medusa-Channel-Name. */
 type ShopChannel = "tropfshop" | "hofladen";
+
+/**
+ * Sprint 12 — Produkt-Kategorien (nur Tropfshop).
+ *
+ * Die Storefront (apps/storefront-tropfshop) liest Kategorien + Produkte direkt
+ * ueber das gescopte Medusa-Store-SDK — es gibt bewusst KEINE custom Store-API
+ * (Anti-Overengineering). Die Kategorie-`handle`s sind die stabile Bruecke
+ * zwischen Seed und Storefront-Verlinkung (auch aus lib/ratgeber.ts referenziert).
+ *
+ * Hofladen bleibt in diesem Sprint unkategorisiert (Scope nur Tropfshop,
+ * Sourcing Vater-blockiert).
+ */
+type CategoryDef = { handle: string; name: string; description: string };
+
+const TROPFSHOP_CATEGORIES: CategoryDef[] = [
+  {
+    handle: "tropfschlaeuche",
+    name: "Tropfschläuche",
+    description:
+      "Druckkompensierende Tropfschläuche in 16 und 20 mm für Reihenkulturen, Hochbeete und größere Flächen.",
+  },
+  {
+    handle: "druckminderer",
+    name: "Druckminderer",
+    description:
+      "Druckregler von 0,7 bis 2,0 bar — senken den Leitungsdruck auf den Arbeitsbereich der Tropfer.",
+  },
+  {
+    handle: "verbinder-verteilung",
+    name: "Verbinder & Verteilung",
+    description:
+      "T-Stücke, Endkappen, Reduzierer, Verschraubungen und Verteilerschläuche für den Aufbau Ihres Systems.",
+  },
+  {
+    handle: "tropfer",
+    name: "Tropfer",
+    description:
+      "Einzel- und Stechtropfer mit konstanter Abgabemenge zum punktgenauen Bewässern einzelner Pflanzen.",
+  },
+  {
+    handle: "filter",
+    name: "Filter",
+    description:
+      "Scheibenfilter schützen die feinen Tropferöffnungen zuverlässig vor Sedimenten.",
+  },
+  {
+    handle: "ventile-steuerung",
+    name: "Ventile & Steuerung",
+    description:
+      "Magnetventile, Verteilerblöcke und Bewässerungscomputer zur Automatisierung Ihrer Bewässerungs-Kreise.",
+  },
+  {
+    handle: "komplett-sets",
+    name: "Komplett-Sets",
+    description:
+      "Vorkonfigurierte Bewässerungs-Sets für Hochbeet, Tomaten und Balkonkasten — sofort startklar.",
+  },
+];
+
+/**
+ * Kategorie-Handle → Tropfshop-SKUs. Single Source of Truth fuer die Zuordnung;
+ * wird zur Laufzeit zu `categoryHandleBySku` invertiert. Muss in Summe alle 31
+ * Tropfshop-SKUs abdecken (Test prueft das in integration-tests).
+ */
+const TROPFSHOP_CATEGORY_SKUS: Record<string, string[]> = {
+  tropfschlaeuche: [
+    "SM-TRP-0001",
+    "SM-TRP-0002",
+    "SM-TRP-0016",
+    "SM-TRP-0017",
+    "SM-TRP-0018",
+    "SM-TRP-0019",
+    "SM-TRP-0020",
+    "SM-TRP-0021",
+  ],
+  druckminderer: [
+    "SM-TRP-0003",
+    "SM-TRP-0004",
+    "SM-TRP-0022",
+    "SM-TRP-0023",
+    "SM-TRP-0024",
+  ],
+  "verbinder-verteilung": [
+    "SM-TRP-0005",
+    "SM-TRP-0006",
+    "SM-TRP-0008",
+    "SM-TRP-0027",
+    "SM-TRP-0028",
+    "SM-TRP-0029",
+    "SM-TRP-0031",
+  ],
+  tropfer: ["SM-TRP-0007", "SM-TRP-0030"],
+  filter: ["SM-TRP-0009"],
+  "ventile-steuerung": [
+    "SM-TRP-0010",
+    "SM-TRP-0014",
+    "SM-TRP-0015",
+    "SM-TRP-0025",
+    "SM-TRP-0026",
+  ],
+  "komplett-sets": ["SM-TRP-0011", "SM-TRP-0012", "SM-TRP-0013"],
+};
 
 const TROPFSHOP_MOCK_PRODUCTS: MockProduct[] = [
   {
@@ -400,60 +506,142 @@ export default async function seedMockProducts({ container }: ExecArgs) {
         created: 0,
         skipped: ALL_MOCK_PRODUCTS.length,
       },
-      `Mock-Produkte: bereits alle ${ALL_MOCK_PRODUCTS.length} Eintraege vorhanden, nichts zu tun.`,
+      `Mock-Produkte: bereits alle ${ALL_MOCK_PRODUCTS.length} Eintraege vorhanden, nichts neu anzulegen.`,
     );
-    return;
+  } else {
+    const byChannelCounts = toCreate.reduce<Record<ShopChannel, number>>(
+      (acc, p) => {
+        acc[p.channel] = (acc[p.channel] ?? 0) + 1;
+        return acc;
+      },
+      { tropfshop: 0, hofladen: 0 },
+    );
+
+    logger.info(
+      {
+        event: "mock_products.create_start",
+        total: ALL_MOCK_PRODUCTS.length,
+        toCreate: toCreate.length,
+        skipped: ALL_MOCK_PRODUCTS.length - toCreate.length,
+        perChannel: byChannelCounts,
+      },
+      `Mock-Produkte: ${toCreate.length} von ${ALL_MOCK_PRODUCTS.length} werden neu angelegt (Tropfshop ${byChannelCounts.tropfshop} / Hofladen ${byChannelCounts.hofladen})...`,
+    );
+
+    await createProductsWorkflow(container).run({
+      input: {
+        products: toCreate.map((p) => ({
+          title: p.title,
+          handle: p.handle,
+          description: p.description,
+          status: "published" as const,
+          options: [{ title: "Variante", values: ["Standard"] }],
+          variants: [
+            {
+              title: "Standard",
+              sku: p.sku,
+              manage_inventory: false,
+              options: { Variante: "Standard" },
+              // Bewusst KEINE Preise — siehe Datei-Header.
+              prices: [],
+            },
+          ],
+          sales_channels: [{ id: channelByName.get(p.channel)! }],
+        })),
+      },
+    });
+
+    logger.info(
+      {
+        event: "mock_products.create_done",
+        created: toCreate.length,
+        skus: toCreate.map((p) => p.sku),
+        total: ALL_MOCK_PRODUCTS.length,
+      },
+      `Mock-Produkte angelegt: ${toCreate.map((p) => p.sku).join(", ")}. Tiles haben insgesamt ${ALL_MOCK_PRODUCTS.length} Produkt(e).`,
+    );
   }
 
-  const byChannelCounts = toCreate.reduce<Record<ShopChannel, number>>(
-    (acc, p) => {
-      acc[p.channel] = (acc[p.channel] ?? 0) + 1;
-      return acc;
-    },
-    { tropfshop: 0, hofladen: 0 },
-  );
+  // ── Sprint 12: Tropfshop-Produkt-Kategorien (idempotent) ───────────────────
+  // Laeuft unabhaengig davon, ob Produkte neu angelegt wurden — so bekommen auch
+  // bereits vorhandene Produkte (Seeds vor Sprint 12) ihre Kategorie.
 
+  // 1) Kategorien anlegen, sofern noch nicht vorhanden (Lookup per handle).
+  const categoryHandles = TROPFSHOP_CATEGORIES.map((c) => c.handle);
+  const existingCategories = await productService.listProductCategories({
+    handle: categoryHandles,
+  });
+  const categoryIdByHandle = new Map<string, string>(
+    existingCategories.map((c) => [c.handle, c.id]),
+  );
+  const categoriesToCreate = TROPFSHOP_CATEGORIES.filter(
+    (c) => !categoryIdByHandle.has(c.handle),
+  );
+  if (categoriesToCreate.length > 0) {
+    const { result: createdCategories } = await createProductCategoriesWorkflow(
+      container,
+    ).run({
+      input: {
+        product_categories: categoriesToCreate.map((c) => ({
+          name: c.name,
+          handle: c.handle,
+          description: c.description,
+          is_active: true,
+        })),
+      },
+    });
+    for (const c of createdCategories) {
+      categoryIdByHandle.set(c.handle, c.id);
+    }
+  }
   logger.info(
     {
-      event: "mock_products.create_start",
-      total: ALL_MOCK_PRODUCTS.length,
-      toCreate: toCreate.length,
-      skipped: ALL_MOCK_PRODUCTS.length - toCreate.length,
-      perChannel: byChannelCounts,
+      event: "mock_products.categories_ready",
+      total: TROPFSHOP_CATEGORIES.length,
+      created: categoriesToCreate.length,
+      skipped: TROPFSHOP_CATEGORIES.length - categoriesToCreate.length,
     },
-    `Mock-Produkte: ${toCreate.length} von ${ALL_MOCK_PRODUCTS.length} werden neu angelegt (Tropfshop ${byChannelCounts.tropfshop} / Hofladen ${byChannelCounts.hofladen})...`,
+    `Kategorien bereit: ${categoriesToCreate.length} neu, ${TROPFSHOP_CATEGORIES.length - categoriesToCreate.length} vorhanden.`,
   );
 
-  await createProductsWorkflow(container).run({
-    input: {
-      products: toCreate.map((p) => ({
-        title: p.title,
-        handle: p.handle,
-        description: p.description,
-        status: "published" as const,
-        options: [{ title: "Variante", values: ["Standard"] }],
-        variants: [
-          {
-            title: "Standard",
-            sku: p.sku,
-            manage_inventory: false,
-            options: { Variante: "Standard" },
-            // Bewusst KEINE Preise — siehe Datei-Header.
-            prices: [],
-          },
-        ],
-        sales_channels: [{ id: channelByName.get(p.channel)! }],
-      })),
-    },
+  // 2) Kategorie-Handle je SKU aufloesen (Inversion der Category→SKU-Map).
+  const categoryHandleBySku = new Map<string, string>();
+  for (const [handle, skus] of Object.entries(TROPFSHOP_CATEGORY_SKUS)) {
+    for (const sku of skus) categoryHandleBySku.set(sku, handle);
+  }
+
+  // 3) Tropfshop-Produkte laden (per handle) und ihre Kategorie setzen.
+  //    updateProducts mit `category_ids` ist idempotent (setzt die Zuordnung exakt).
+  const tropfshopHandles = TROPFSHOP_MOCK_PRODUCTS.map((p) => p.handle);
+  const tropfshopProducts = await productService.listProducts({
+    handle: tropfshopHandles,
+  });
+  const productIdByHandle = new Map<string, string>(
+    tropfshopProducts.map((p) => [p.handle, p.id]),
+  );
+
+  const categoryUpdates = TROPFSHOP_MOCK_PRODUCTS.flatMap((p) => {
+    const productId = productIdByHandle.get(p.handle);
+    const categoryHandle = categoryHandleBySku.get(p.sku);
+    const categoryId = categoryHandle
+      ? categoryIdByHandle.get(categoryHandle)
+      : undefined;
+    if (!productId || !categoryId) return [];
+    return [{ id: productId, category_ids: [categoryId] }];
   });
 
+  if (categoryUpdates.length > 0) {
+    await updateProductsWorkflow(container).run({
+      input: { products: categoryUpdates },
+    });
+  }
+
   logger.info(
     {
-      event: "mock_products.create_done",
-      created: toCreate.length,
-      skus: toCreate.map((p) => p.sku),
-      total: ALL_MOCK_PRODUCTS.length,
+      event: "mock_products.categories_linked",
+      linked: categoryUpdates.length,
+      tropfshopTotal: TROPFSHOP_MOCK_PRODUCTS.length,
     },
-    `Mock-Produkte angelegt: ${toCreate.map((p) => p.sku).join(", ")}. Tiles haben insgesamt ${ALL_MOCK_PRODUCTS.length} Produkt(e).`,
+    `Kategorie-Zuordnung gesetzt fuer ${categoryUpdates.length}/${TROPFSHOP_MOCK_PRODUCTS.length} Tropfshop-Produkte.`,
   );
 }

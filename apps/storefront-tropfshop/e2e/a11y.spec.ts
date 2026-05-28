@@ -18,6 +18,12 @@ import { expect, test } from "@playwright/test";
 const AUDITED_ROUTES = [
   { path: "/", label: "Coming-Soon-Page" },
   { path: "/newsletter-bestaetigt", label: "Newsletter-Bestaetigt-Page" },
+  { path: "/produkte", label: "Sortiment-Uebersicht" },
+  { path: "/ratgeber", label: "Ratgeber-Uebersicht" },
+  {
+    path: "/ratgeber/tropfbewaesserung-hochbeet-planen",
+    label: "Ratgeber-Artikel",
+  },
 ] as const;
 
 for (const route of AUDITED_ROUTES) {
