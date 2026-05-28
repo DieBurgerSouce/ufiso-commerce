@@ -30,7 +30,10 @@ type MockProduct = {
   sku: string;
 };
 
-const MOCK_PRODUCTS: MockProduct[] = [
+/** Sprint 11 C.2 — Multi-Shop. Channel-Slug entspricht Medusa-Channel-Name. */
+type ShopChannel = "tropfshop" | "hofladen";
+
+const TROPFSHOP_MOCK_PRODUCTS: MockProduct[] = [
   {
     title: "Rivulis Aries 16 mm Tropfschlauch, 250 m Rolle",
     handle: "rivulis-aries-16mm-250m",
@@ -255,22 +258,129 @@ const MOCK_PRODUCTS: MockProduct[] = [
   },
 ];
 
+/**
+ * Sprint 11 C.2 — Hofladen-Mock-Sortiment.
+ *
+ * Bewusst generische Lebensmittel-Kategorien OHNE echte Lieferanten- oder
+ * Hofnamen — die Sourcing-Entscheidung ist Vater-blockiert (siehe
+ * Vault: 09-Briefings/Lieferanten-UFISO-Brands-Brainstorm.md, Hofladen-Stub).
+ * Diese 10 SKUs existieren ausschliesslich, damit der zweite Channel ein
+ * sichtbares Coming-Soon-Tile-Set hat und die Multi-Shop-Architektur
+ * funktional verifiziert werden kann. Visuelles Polishing + reale SKUs
+ * kommen mit Sprint 12 nach Vater-Termin.
+ */
+const HOFLADEN_MOCK_PRODUCTS: MockProduct[] = [
+  {
+    title: "Schnittkaese vom Hof, 250 g",
+    handle: "hof-schnittkaese-250g",
+    description:
+      "Junger Schnittkaese aus Vorzugsmilch, mild im Geschmack. Generisches Mock-Produkt fuer Sprint-11-Stresstest — finale Sortiments-Entscheidung steht aus.",
+    sku: "HOF-0001",
+  },
+  {
+    title: "Geraeucherte Bauernwurst, 200 g",
+    handle: "hof-bauernwurst-200g",
+    description:
+      "Luftgetrocknete und geraeucherte Mettwurst, am Stueck. Generisches Mock-Produkt fuer Sprint-11-Stresstest.",
+    sku: "HOF-0002",
+  },
+  {
+    title: "Apfelsaft naturtrueb, 1 l Glasflasche",
+    handle: "hof-apfelsaft-naturtrueb-1l",
+    description:
+      "Naturtrueber Apfelsaft aus eigenem Streuobst, in der 1-l-Glasflasche mit Pfand. Generisches Mock-Produkt fuer Sprint-11-Stresstest.",
+    sku: "HOF-0003",
+  },
+  {
+    title: "Bluetenhonig, 500 g Glas",
+    handle: "hof-bluetenhonig-500g",
+    description:
+      "Regionaler Bluetenhonig vom Imker, cremig geruehrt, 500 g im Glas. Generisches Mock-Produkt fuer Sprint-11-Stresstest.",
+    sku: "HOF-0004",
+  },
+  {
+    title: "Erdbeer-Marmelade, 250 g Glas",
+    handle: "hof-erdbeer-marmelade-250g",
+    description:
+      "Hausgemachte Erdbeer-Marmelade mit 50 % Fruchtanteil, 250 g im Glas. Generisches Mock-Produkt fuer Sprint-11-Stresstest.",
+    sku: "HOF-0005",
+  },
+  {
+    title: "Bandnudeln Hartweizen, 500 g",
+    handle: "hof-bandnudeln-hartweizen-500g",
+    description:
+      "Bronzegezogene Bandnudeln aus Hartweizengriess, 500 g Beutel. Generisches Mock-Produkt fuer Sprint-11-Stresstest.",
+    sku: "HOF-0006",
+  },
+  {
+    title: "Rapsoel kalt gepresst, 500 ml",
+    handle: "hof-rapsoel-kaltgepresst-500ml",
+    description:
+      "Kalt gepresstes Rapsoel mit nussigem Aroma, 500 ml Flasche. Generisches Mock-Produkt fuer Sprint-11-Stresstest.",
+    sku: "HOF-0007",
+  },
+  {
+    title: "Roggenmehl Type 1150, 1 kg",
+    handle: "hof-roggenmehl-1150-1kg",
+    description:
+      "Steingemahlenes Roggenmehl Type 1150 fuer Sauerteig-Brote, 1 kg Tuete. Generisches Mock-Produkt fuer Sprint-11-Stresstest.",
+    sku: "HOF-0008",
+  },
+  {
+    title: "Kraeutertee lose, 100 g",
+    handle: "hof-kraeutertee-lose-100g",
+    description:
+      "Lose Kraeutermischung aus Pfefferminze, Melisse und Brennnessel, 100 g im Aromabeutel. Generisches Mock-Produkt fuer Sprint-11-Stresstest.",
+    sku: "HOF-0009",
+  },
+  {
+    title: "Freilandeier, 10er Pack",
+    handle: "hof-freilandeier-10er",
+    description:
+      "Eier aus Freilandhaltung, Groesse M, 10er-Pack im Karton. Generisches Mock-Produkt fuer Sprint-11-Stresstest.",
+    sku: "HOF-0010",
+  },
+];
+
+/**
+ * Zentrales Mock-Sortiment fuer beide Channels. Sprint 11 C.2 — Hofladen-
+ * SKUs werden NUR dem `hofladen`-Channel zugewiesen, Tropfshop-SKUs bleiben
+ * exklusiv auf `tropfshop`. Multi-Channel-Produkte sind aktuell nicht
+ * geplant (jeder Shop sein Sortiment), aber das Datenmodell wuerde es
+ * unterstuetzen.
+ */
+const ALL_MOCK_PRODUCTS: ReadonlyArray<MockProduct & { channel: ShopChannel }> =
+  [
+    ...TROPFSHOP_MOCK_PRODUCTS.map((p) => ({
+      ...p,
+      channel: "tropfshop" as const,
+    })),
+    ...HOFLADEN_MOCK_PRODUCTS.map((p) => ({
+      ...p,
+      channel: "hofladen" as const,
+    })),
+  ];
+
 export default async function seedMockProducts({ container }: ExecArgs) {
   const logger = createComponentLogger("mock-products");
   const productService = container.resolve(Modules.PRODUCT);
   const salesChannelService = container.resolve(Modules.SALES_CHANNEL);
 
-  const [tropfshopChannel] = await salesChannelService.listSalesChannels({
-    name: "tropfshop",
-  });
-  if (!tropfshopChannel) {
-    throw new Error(
-      "Sales Channel 'tropfshop' nicht gefunden. Bitte zuerst `pnpm --filter @ufiso/backend seed` ausfuehren.",
-    );
+  const channelByName = new Map<ShopChannel, string>();
+  for (const channelName of ["tropfshop", "hofladen"] as const) {
+    const [channel] = await salesChannelService.listSalesChannels({
+      name: channelName,
+    });
+    if (!channel) {
+      throw new Error(
+        `Sales Channel '${channelName}' nicht gefunden. Bitte zuerst \`pnpm --filter @ufiso/backend seed\` ausfuehren.`,
+      );
+    }
+    channelByName.set(channelName, channel.id);
   }
 
   // Idempotenz: existierende SKUs ermitteln und ueberspringen.
-  const allSkus = MOCK_PRODUCTS.map((p) => p.sku);
+  const allSkus = ALL_MOCK_PRODUCTS.map((p) => p.sku);
   const existingVariants = await productService.listProductVariants({
     sku: allSkus,
   });
@@ -278,29 +388,40 @@ export default async function seedMockProducts({ container }: ExecArgs) {
     existingVariants.map((v) => v.sku).filter((s): s is string => Boolean(s)),
   );
 
-  const toCreate = MOCK_PRODUCTS.filter((p) => !existingSkuSet.has(p.sku));
+  const toCreate = ALL_MOCK_PRODUCTS.filter(
+    (p) => !existingSkuSet.has(p.sku),
+  );
 
   if (toCreate.length === 0) {
     logger.info(
       {
         event: "mock_products.skip_all",
-        total: MOCK_PRODUCTS.length,
+        total: ALL_MOCK_PRODUCTS.length,
         created: 0,
-        skipped: MOCK_PRODUCTS.length,
+        skipped: ALL_MOCK_PRODUCTS.length,
       },
-      `Mock-Produkte: bereits alle ${MOCK_PRODUCTS.length} Eintraege vorhanden, nichts zu tun.`,
+      `Mock-Produkte: bereits alle ${ALL_MOCK_PRODUCTS.length} Eintraege vorhanden, nichts zu tun.`,
     );
     return;
   }
 
+  const byChannelCounts = toCreate.reduce<Record<ShopChannel, number>>(
+    (acc, p) => {
+      acc[p.channel] = (acc[p.channel] ?? 0) + 1;
+      return acc;
+    },
+    { tropfshop: 0, hofladen: 0 },
+  );
+
   logger.info(
     {
       event: "mock_products.create_start",
-      total: MOCK_PRODUCTS.length,
+      total: ALL_MOCK_PRODUCTS.length,
       toCreate: toCreate.length,
-      skipped: MOCK_PRODUCTS.length - toCreate.length,
+      skipped: ALL_MOCK_PRODUCTS.length - toCreate.length,
+      perChannel: byChannelCounts,
     },
-    `Mock-Produkte: ${toCreate.length} von ${MOCK_PRODUCTS.length} werden neu angelegt...`,
+    `Mock-Produkte: ${toCreate.length} von ${ALL_MOCK_PRODUCTS.length} werden neu angelegt (Tropfshop ${byChannelCounts.tropfshop} / Hofladen ${byChannelCounts.hofladen})...`,
   );
 
   await createProductsWorkflow(container).run({
@@ -310,9 +431,7 @@ export default async function seedMockProducts({ container }: ExecArgs) {
         handle: p.handle,
         description: p.description,
         status: "published" as const,
-        options: [
-          { title: "Variante", values: ["Standard"] },
-        ],
+        options: [{ title: "Variante", values: ["Standard"] }],
         variants: [
           {
             title: "Standard",
@@ -323,7 +442,7 @@ export default async function seedMockProducts({ container }: ExecArgs) {
             prices: [],
           },
         ],
-        sales_channels: [{ id: tropfshopChannel.id }],
+        sales_channels: [{ id: channelByName.get(p.channel)! }],
       })),
     },
   });
@@ -333,8 +452,8 @@ export default async function seedMockProducts({ container }: ExecArgs) {
       event: "mock_products.create_done",
       created: toCreate.length,
       skus: toCreate.map((p) => p.sku),
-      total: MOCK_PRODUCTS.length,
+      total: ALL_MOCK_PRODUCTS.length,
     },
-    `Mock-Produkte angelegt: ${toCreate.map((p) => p.sku).join(", ")}. Tiles haben ${MOCK_PRODUCTS.length} Produkt(e).`,
+    `Mock-Produkte angelegt: ${toCreate.map((p) => p.sku).join(", ")}. Tiles haben insgesamt ${ALL_MOCK_PRODUCTS.length} Produkt(e).`,
   );
 }

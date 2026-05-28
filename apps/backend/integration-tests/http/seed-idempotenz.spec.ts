@@ -67,6 +67,12 @@ medusaIntegrationTestRunner({
         });
         expect(channels).toHaveLength(1);
 
+        // Sprint 11 C.2 — Hofladen-Channel als zweiter Brand.
+        const hofladenChannels = await salesChannelService.listSalesChannels({
+          name: "hofladen",
+        });
+        expect(hofladenChannels).toHaveLength(1);
+
         const regionsDE = await regionService.listRegions({
           name: "Deutschland",
         });
@@ -92,6 +98,13 @@ medusaIntegrationTestRunner({
         });
         expect(stockLocations).toHaveLength(1);
 
+        // Sprint 11 C.2 — zweite Stock Location fuer Hofladen-Channel.
+        const hofladenStockLocations =
+          await stockLocationService.listStockLocations({
+            name: "Hofladen-Lager",
+          });
+        expect(hofladenStockLocations).toHaveLength(1);
+
         const fulfillmentSets = await fulfillmentService.listFulfillmentSets({
           name: "Versand Solingen",
         });
@@ -111,6 +124,13 @@ medusaIntegrationTestRunner({
           type: "publishable",
         });
         expect(apiKeys).toHaveLength(1);
+
+        // Sprint 11 C.2 — zweiter Publishable Key fuer Hofladen-Storefront.
+        const hofladenApiKeys = await apiKeyService.listApiKeys({
+          title: "Hofladen Storefront",
+          type: "publishable",
+        });
+        expect(hofladenApiKeys).toHaveLength(1);
       });
     });
   },

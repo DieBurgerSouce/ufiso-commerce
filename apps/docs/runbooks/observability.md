@@ -71,6 +71,37 @@ Dashboard-Use-Cases (sobald live):
 - "Health-Failures pro Stunde" — Filter `component:health event:health.fail`.
 - "Welcher Endpoint crasht oft" — Group `client.error pathname` (Storefront).
 
+## Token-Rotation (BetterStack-Source)
+
+Sprint 10 A.2 hat einen Repo-Root-Screenshot `betterstack-source-token.png`
+hart enttarnt — Git-History selbst war sauber, aber der Token war im
+Bild-Vordergrund. Sprint 11 B.1 schliesst die Vorsicht-Rotation. Auch
+ohne Leak ist eine Source-Token-Rotation pro Quartal sinnvoll.
+
+Schritte (USER, ~5 min):
+
+1. BetterStack-UI → **Sources** → Source `ufiso-storefront`
+   (Source-ID `2468458`, BetterStack-EU) → **Edit** → **Rotate token**.
+   Neuen Wert kopieren.
+2. Vercel-Project `ufiso-commerce-storefront-tropfshop` →
+   **Settings → Environment Variables** → `LOGTAIL_SOURCE_TOKEN`
+   ueberschreiben (Production + Preview, beides). **Save**.
+3. **Re-Deploy** Vercel-Preview (Deployments → letzte Preview →
+   Redeploy → "Use existing Build Cache" abwaehlen, damit das ENV
+   im Bundle landet).
+4. Alten Token in BetterStack auf **Invalidate** setzen (sobald der
+   neue Token im Vercel-Build sichtbar ist).
+5. Smoke-Event verifizieren:
+   - Vercel-Preview-URL aufrufen, Newsletter-Submit triggern.
+   - BetterStack-Source `ufiso-storefront` → Live-View → Event mit
+     `component:newsletter event:submit` innerhalb von 60 s.
+6. Eintrag in [[Wo-stehe-ich-gerade]] und Vault-Daily-Note.
+
+**Wenn der alte Token noch im Vault** (nicht der Fall, weil Vault-
+`.gitignore` ENV-Files blockt und ADR-015 dokumentiert das Verbot):
+zusaetzlich `git filter-repo --replace-text` im Vault-Repo, danach
+force-push. Siehe PRE-COMMIT-CHECKLIST.md im Vault.
+
 ## PII-Audit-Checkliste
 
 Vor jedem PR mit neuen Log-Lines: gegen die Redact-Pfad-Liste in

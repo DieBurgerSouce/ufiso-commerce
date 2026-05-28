@@ -1,18 +1,16 @@
 {
-  "name": "@ufiso/storefront-tropfshop",
+  "name": "@ufiso/storefront-hofladen",
   "version": "0.0.0",
   "private": true,
-  "description": "Tropfshop Storefront (Next.js 15) — Phase 1: Pre-Launch-Page mit Newsletter-Capture.",
+  "description": "Hofladen Storefront (Next.js 15) — Phase 1: Pre-Launch-Page mit Newsletter-Capture (Sprint 11 FUNKTIONALER Stresstest).",
   "scripts": {
-    "dev": "next dev --port 3000",
+    "dev": "next dev --port 3001",
     "build": "next build",
-    "start": "next start --port 3000",
+    "start": "next start --port 3001",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
-    "test:e2e:staging": "playwright test --config=playwright.staging.config.ts",
-    "lighthouse": "lhci autorun",
-    "lighthouse:production": "lhci autorun --config=lighthouserc.production.json"
+    "lighthouse": "lhci autorun"
   },
   "dependencies": {
     "@logtail/pino": "^0.5.8",
