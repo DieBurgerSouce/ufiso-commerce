@@ -127,7 +127,7 @@ export default async function RatgeberArticlePage({ params }: Props) {
         <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
           {article.title}
         </h1>
-        <p className="mt-3 text-xs uppercase tracking-wide text-neutral-500">
+        <p className="mt-3 text-xs uppercase tracking-wide text-neutral-400">
           {article.readingMinutes} Min. Lesezeit
         </p>
         <p className="mt-6 text-pretty text-lg leading-relaxed text-neutral-300">

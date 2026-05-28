@@ -79,7 +79,7 @@ export default function RatgeberIndexPage() {
                 <p className="mt-2 text-sm leading-relaxed text-neutral-400">
                   {article.description}
                 </p>
-                <span className="mt-3 inline-block text-xs uppercase tracking-wide text-neutral-500">
+                <span className="mt-3 inline-block text-xs uppercase tracking-wide text-neutral-400">
                   {article.readingMinutes} Min. Lesezeit
                 </span>
               </Link>

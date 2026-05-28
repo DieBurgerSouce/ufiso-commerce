@@ -102,7 +102,7 @@ export function NewsletterForm() {
         <button
           type="submit"
           disabled={status === "loading"}
-          className="shrink-0 rounded-xl bg-accent px-5 py-3 font-semibold text-neutral-950 transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="shrink-0 rounded-xl bg-accent px-5 py-3 font-semibold text-neutral-50 transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {status === "loading" ? "Wird gesendet…" : "Benachrichtigen"}
         </button>
